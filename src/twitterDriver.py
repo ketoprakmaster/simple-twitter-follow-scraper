@@ -1,0 +1,203 @@
+# %%
+from pathlib import Path
+# from icecream import ic
+
+# from selenium import webdriver
+from selenium.webdriver.common.by import By
+# from selenium.webdriver.chrome.options import Options
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+
+from selenium.common.exceptions import StaleElementReferenceException
+from selenium.common.exceptions import NoSuchWindowException
+from selenium.common.exceptions import NoSuchElementException
+from selenium.common.exceptions import TimeoutException
+
+import undetected_chromedriver as uc
+
+import os
+import time
+
+
+
+# # performance counter
+# def clean_exec_time(fnc):
+#     def wrapper(*args, **kwargs):
+#         t0 = time.perf_counter()
+#         val = fnc(*args, **kwargs)
+#         t1 = time.perf_counter()
+#         print(f"time elapsed: {t1-t0}")
+#         return val
+#     return wrapper
+
+
+def initialize_driver(headless:bool = False, user_profile:str = '', auto: bool = False):
+    while True:
+        try:
+            if not user_profile:
+                user_profile = Path.cwd() / "profile"
+            else:
+                user_profile = Path(user_profile).resolve()
+            options = uc.ChromeOptions()
+            options.add_argument(f"--user-data-dir={user_profile}")
+            options.add_argument('--disable-blink-features=AutomationControlled')
+            if headless:
+                # chrome headless is a bit buggy, it makes a huge blank window on desktop when using 
+                # --headles mode.
+                # so i copy pasted one of the stackoverflow "solution" of just moving it away from users 
+                # screen so that it can't be seen
+                options.add_argument(f"--window-position=-2400,-2400")
+                options.add_argument(f"--headless")
+                options.add_argument(f"--headless=new")
+            driver = uc.Chrome(options=options)
+            break
+        except Exception as e:
+            print(e)
+            print("\n\nfailed to initialize the chromedriver..\nmake sure you have internet connection\n")
+            if not auto: input("press any key to continue\n")
+            os.system('cls')
+    
+    return driver
+
+
+def get_user_handle(driver) -> str:
+    """get the user handle from twitter on an instance of driver web"""
+    driver.get("https://x.com/home")
+    try:
+        element = WebDriverWait(driver,10).until(
+            EC.presence_of_element_located((By.XPATH,"//button[@aria-label='Account menu']//*[@data-testid]"))
+        )
+    except TimeoutException:
+        print("\ntimeout exception, possibly due to no user login exist yet\nplease ensure that your logins on twitter exist in order to scrape successfully.")
+        os.system("pause")
+        return 
+    user_handle = element.get_attribute("data-testid").split('-')[-1]
+    print(f"\nuser handle acquired: {user_handle}\n")
+    return user_handle
+        
+    
+
+def scroll_down(driver):
+    # Calculate the height to scroll (scrolling halfway)
+    window_height = driver.execute_script("return window.innerHeight;")
+
+    # Calculate the initial and target scroll positions
+    initial_scroll_position = driver.execute_script("return window.pageYOffset;")
+    target_scroll_position = initial_scroll_position + (window_height * 2)
+
+    # Scroll halfway down
+    driver.execute_script(f"window.scrollTo(0, {target_scroll_position});")    
+
+
+def fetch_user_list(driver) -> set:
+    """scrape a users follows while scrolling down the webpages
+    
+    required args: driver (chrome). Returns a (set) containing 'Hopefully' the entire user follows.
+    
+    returns None if users_list (set) is empty.
+    """
+    users_list, count = set(),int()
+    
+    while True:
+        try:
+            users = scrape_users_on_page(driver)
+        except NoSuchElementException:
+            print("\nno such element is detected\nproceed to refreshing the webpage\n")
+            driver.refresh();time.sleep(4)
+            continue
+        except NoSuchWindowException:
+            print("\nno windows is detected,aborting the program")
+            return [] 
+        
+        for user in users.difference(users_list):
+            users_list.add(user)
+            count = 0   # set the count to zero
+            
+            print(f"{user.ljust(50,'.')}: added ({len(users_list)})")
+        else:
+            count += 1  # increment the count by one
+            if count >= 5:
+                break
+                                
+        scroll_down(driver)
+           
+    # Extract the user elements
+    if users_list:
+        return users_list
+
+
+# @clean_exec_time 
+def scrape_users_on_page(driver) -> set:
+    """scrape the user elements on page. required args driver (chrome) returns a (set) containing user handles"""
+    time.sleep(.2)  # Adjust sleep time as needed
+    
+    users = set()
+    exceptlist = []
+    
+    user_elements = WebDriverWait(driver,3).until(EC.presence_of_all_elements_located((By.XPATH, "//div[@data-testid='cellInnerDiv']")))
+    
+    if not user_elements:
+        raise NoSuchElementException("no element is detected within webpages")
+    
+    for elements in user_elements:
+        # mitigates stale element exception
+        try:
+            elements = elements.text.split('\n')
+        except StaleElementReferenceException as e:
+            exceptlist.append(e)
+            continue
+            
+        if len(elements) <= 1:
+            # print(f"not enough user elements to scrape out of: {elements}")
+            continue
+        
+        users_handle : str = elements[1]
+
+        if not users_handle:
+            continue
+        
+        users.add(users_handle.lower())
+
+    if exceptlist:
+        print(f"number of Stale_Element exception occured: {len(exceptlist)}")
+
+    return users
+
+
+
+def check_user_follow(driver,href) -> int:
+    """check users following on the webpage. 
+    required an args of both selenium driver (chrome) and href (str) for element location.
+    returns a number of follow as an int"""
+    elem = driver.find_element(By.XPATH,f"//a[translate(@href,'ABCDEFGHIJKLMNOPQERSSTUVWXYZ','abcdefghijklmnopqerstuvwxyz') = '/{href}']")
+    elem = ''.join(n for n in elem.text if n.isdigit())
+    
+    return int(elem) 
+
+
+# %%
+if __name__ == "__main__":
+    # from twitterConfig import twitterConfig
+    
+    # config = twitterConfig()
+    # config.readConfig('config.ini')
+    # config.checkConfig() 
+    
+    driver = initialize_driver(True,user_profile=Path.cwd() / '..'/ 'profile')
+    driver.get("https://x.com/betaantares/followers")
+# %%
+    fetch_user_list(driver)    
+# %%
+    driver.get('https://nowsecure.nl')
+    #%%
+    driver.save_screenshot('nowsecure.png')
+
+
+# %%
+    
+    driver.quit()
+    
+
+
+
+# %%
