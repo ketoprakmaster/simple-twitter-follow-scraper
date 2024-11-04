@@ -64,15 +64,12 @@ def options_username_input(msg: str = '') -> str:
 
 def options_yes_or_no(string) -> str: # by default just pressing enter counts as "yes"
     while True:
-        # os.system('cls')
-        try:
-            match input(string):
-                case "no" | "n":
-                    return False
-                case _:
-                    return True
-        except Exception as e:
-            print(e)
+        match input(string).lower():
+            case "no" | "n":
+                return False
+            case _:
+                return True
+
 
 
 

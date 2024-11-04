@@ -31,13 +31,15 @@ import time
 #     return wrapper
 
 
-def initialize_driver(headless:bool = False, user_profile:str = '', auto: bool = False):
+class UserScrapeOperationFailed(Exception):
+    "general catch all term for when failing scraping users follows"
+
+
+
+def initialize_driver(headless:bool = False):
     while True:
         try:
-            if not user_profile:
-                user_profile = Path.cwd() / "profile"
-            else:
-                user_profile = Path(user_profile).resolve()
+            user_profile = Path.cwd() / 'profile'
             options = uc.ChromeOptions()
             options.add_argument(f"--user-data-dir={user_profile}")
             options.add_argument('--disable-blink-features=AutomationControlled')
@@ -54,7 +56,7 @@ def initialize_driver(headless:bool = False, user_profile:str = '', auto: bool =
         except Exception as e:
             print(e)
             print("\n\nfailed to initialize the chromedriver..\nmake sure you have internet connection\n")
-            if not auto: input("press any key to continue\n")
+            input("press any key to continue\n")
             os.system('cls')
     
     return driver
@@ -68,9 +70,7 @@ def get_user_handle(driver) -> str:
             EC.presence_of_element_located((By.XPATH,"//button[@aria-label='Account menu']//*[@data-testid]"))
         )
     except TimeoutException:
-        print("\ntimeout exception, possibly due to no user login exist yet\nplease ensure that your logins on twitter exist in order to scrape successfully.")
-        os.system("pause")
-        return 
+        raise UserScrapeOperationFailed("\ntimeout exception, possibly due to no user login exist yet\nplease ensure that your logins on twitter exist in order to scrape successfully.")
     user_handle = element.get_attribute("data-testid").split('-')[-1]
     print(f"\nuser handle acquired: {user_handle}\n")
     return user_handle
@@ -89,56 +89,49 @@ def scroll_down(driver):
     driver.execute_script(f"window.scrollTo(0, {target_scroll_position});")    
 
 
-def fetch_user_list(driver) -> set:
-    """scrape a users follows while scrolling down the webpages
+def scrape_user_follows(user_path: str,driver) -> set:
+    """scrape a users follows as it scrolls down the webpages
     
-    required args: driver (chrome). Returns a (set) containing 'Hopefully' the entire user follows.
+    required args: driver (chrome) and user_path (str) a user dir/pointer. 
+    Returns a (set) containing 'Hopefully' the entire user follows.
     
     returns None if users_list (set) is empty.
     """
+    driver.get(f"https://x.com{user_path}")
     users_list, count = set(),int()
-    
     while True:
         try:
             users = scrape_users_on_page(driver)
         except NoSuchElementException:
-            print("\nno such element is detected\nproceed to refreshing the webpage\n")
+            print("\nno such element is detected..proceed to refreshing the webpage\n")
             driver.refresh();time.sleep(4)
             continue
-        except NoSuchWindowException:
-            print("\nno windows is detected,aborting the program")
-            return [] 
-        
         for user in users.difference(users_list):
             users_list.add(user)
             count = 0   # set the count to zero
-            
             print(f"{user.ljust(50,'.')}: added ({len(users_list)})")
         else:
             count += 1  # increment the count by one
-            if count >= 5:
-                break
-                                
+            if count <= 7:
+                continue
+            if input("coninue scraping? (y/n)").lower() in ['n','no']:
+                break     
         scroll_down(driver)
-           
     # Extract the user elements
-    if users_list:
-        return users_list
+    if not users_list:
+        raise UserScrapeOperationFailed("no user has been scraped...")
+    
+    return users_list
 
 
 # @clean_exec_time 
 def scrape_users_on_page(driver) -> set:
     """scrape the user elements on page. required args driver (chrome) returns a (set) containing user handles"""
     time.sleep(.2)  # Adjust sleep time as needed
-    
-    users = set()
-    exceptlist = []
-    
+    users, exceptlist = set(), list()
     user_elements = WebDriverWait(driver,3).until(EC.presence_of_all_elements_located((By.XPATH, "//div[@data-testid='cellInnerDiv']")))
-    
     if not user_elements:
         raise NoSuchElementException("no element is detected within webpages")
-    
     for elements in user_elements:
         # mitigates stale element exception
         try:
@@ -146,21 +139,16 @@ def scrape_users_on_page(driver) -> set:
         except StaleElementReferenceException as e:
             exceptlist.append(e)
             continue
-            
         if len(elements) <= 1:
             # print(f"not enough user elements to scrape out of: {elements}")
             continue
-        
         users_handle : str = elements[1]
-
         if not users_handle:
             continue
-        
         users.add(users_handle.lower())
-
     if exceptlist:
-        print(f"number of Stale_Element exception occured: {len(exceptlist)}")
-
+        print(f"number of stale element exception occured: {len(exceptlist)}")
+        
     return users
 
 
@@ -175,29 +163,4 @@ def check_user_follow(driver,href) -> int:
     return int(elem) 
 
 
-# %%
-if __name__ == "__main__":
-    # from twitterConfig import twitterConfig
-    
-    # config = twitterConfig()
-    # config.readConfig('config.ini')
-    # config.checkConfig() 
-    
-    driver = initialize_driver(True,user_profile=Path.cwd() / '..'/ 'profile')
-    driver.get("https://x.com/betaantares/followers")
-# %%
-    fetch_user_list(driver)    
-# %%
-    driver.get('https://nowsecure.nl')
-    #%%
-    driver.save_screenshot('nowsecure.png')
 
-
-# %%
-    
-    driver.quit()
-    
-
-
-
-# %%

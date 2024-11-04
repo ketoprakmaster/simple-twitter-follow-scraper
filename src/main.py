@@ -2,7 +2,8 @@ print("application initialize...")
 
 # from telegram import Bot
 from pathlib import Path
-from twitterDriver import fetch_user_list,initialize_driver, get_user_handle, check_user_follow
+from selenium.common.exceptions import NoSuchWindowException
+from twitterDriver import scrape_user_follows,initialize_driver, get_user_handle, UserScrapeOperationFailed
 from input_cli import options_yes_or_no,options_for_which_follow,file_selection, options_username_input
 
 import sys
@@ -30,49 +31,6 @@ class USER(enum.Enum):
     DELETED = enum.auto()
 
 
-# class routine_task():
-#     def __init__(self,driver, TOKEN: str,ID: int, user_path: str) -> None:
-#         self._user_follow = 0 
-#         self._user_path = user_path
-#         self._driver = driver
-#         self._BOT_TOKEN = TOKEN
-#         self._CHAT_ID = ID
-        
-#         self._message("hello world")
-    
-#     def job(self): 
-#         self._log(f": at [{time.strftime('%Y %B %d %H:%M:%S')}]: a job is initiate a routine task of checking user count follow")
-#         user_follow = check_user_follow(self._driver,self._user_path)
-#         if user_follow != self._user_follow:
-#             self._log(f": at [{time.strftime('%Y %B %d %H:%M:%S')}]: a user follow has changed initiate a new scraping task")
-#             self._user_follow = user_follow
-            
-#             # fetch and scrape any user follow changes
-#             users_list = {}
-#             users_list[USER.EXIST] = fetch_user_list(self._driver)
-            
-#             if not users_list[USER.EXIST]:
-#                 self._log(f": at [{time.strftime('%Y %B %d %H:%M:%S')}] users webpage failed to scrape following/followers")
-            
-#             # read from user newwest saved follow then compare it to recent scraped
-#             newest_user_follow_record = read_from_recent_user_records(user_path=self._user_path)
-#             user_comparison = users_records_comparison(users_past=newest_user_follow_record,users_future=users_list[USER.EXIST])
-            
-#             # saved the new scraped user follow
-#             save_users_record(self._user_path,users=users_list)
-#             self._log("")
-            
-                
-#     def _log(self,msg, users: dict = {}):
-#         with open(Path.cwd() / 'schedule logging.txt','a') as file:
-#             print(msg)
-#             file.write(msg)
-            
-#     def _message(self,msg):
-#         url = f"https://api.telegram.org/bot{self._BOT_TOKEN}/sendMessage?chat_id={self._CHAT_ID}&text={msg}"
-#         r = requests.get(url)
-
-
 
 def main():  
     while True:
@@ -97,8 +55,7 @@ def main():
         
         match input('\n\n:').lower():
             case "1":
-                os.system('cls')                
-                initialize_tracking_scene()
+                inittialze_tracking_process()
             case "2":
                 os.system('cls')
                 try:
@@ -121,51 +78,45 @@ def main():
                 continue
 
 
-
-def run_scanner(userpath: str,driver) -> None:
-    driver.get(f"https://x.com/{userpath}")
-    scanned_user_list = fetch_user_list(driver)
-    
-    if not scanned_user_list:
-        os.system("cls")
-        print("no user follow has been tracked, try again..\n")
-        input();return
-    
-    try:
-        users_dict = users_records_comparison(
-            users_past= read_from_recent_user_records(userpath),
-            users_future=scanned_user_list
-        )
-    except FileNotFoundError as e:
-        # if its a new scanning scene it'll just skip the comparison and save the user follow directly
-        save_users_record_to_path(scanned_user_list)
-        print(e)
-    else:
-        output_users_changes(users=users_dict)
-        save_users_record_to_path(user_path=userpath,users=users_dict[USER.EXIST])
-        save_accumulated_records(user_path=userpath)
-    finally:
-        input("press any key to continue\n")
-
-
-
-def initialize_tracking_scene():    
+def inittialze_tracking_process(): 
+    os.system("cls")
+    driver = ''
     try:
         options = options_yes_or_no("run browser on headless? (y/n)\n")
         mode = options_for_which_follow("\nwhich part of users follow you want to scrape?")
-        
         driver = initialize_driver(options)
-        
-        user = get_user_handle(driver)
-
-        userpath = f"{user}/{mode}"
-        
-        run_scanner(userpath,driver)
+        username = get_user_handle(driver)
+        userpath = f"{username}/{mode}"
+        driver.get(f"https://x.com/{userpath}")
+        users_follows = scrape_user_follows(driver)
+        save_and_compare_user_follows(userpath,users_follows)
+    except NoSuchWindowException:
+        print("\nno windows is detected,aborting the program")
+        return  
+    except UserScrapeOperationFailed as e:
+        print(e)
+        return
     except KeyboardInterrupt:
         pass
     finally:
-        if driver:driver.quit()  
+        if driver:driver.quit()
     
+
+def save_and_compare_user_follows(user_path: str,users_set: set):
+    try:
+        users_dict = users_records_comparison(
+            users_past = read_from_recent_user_records(user_path),
+            users_future = users_set
+        )
+    except FileNotFoundError as e:
+        print(e)
+        save_users_record_to_path(user_path,users_set)
+    else:
+        output_users_changes(users_dict)
+        save_users_record_to_path(user_path,users_set)
+        save_accumulated_records(user_path)   
+    finally:
+        input("\npress any key to continue") 
 
 
 def check_recent_comparison(user_path:str = ''):
@@ -216,26 +167,20 @@ def setting_up_browser():
 
 
 ### python files users class/list handling #####
-def save_users_record_to_path(user_path: Path, users: set) -> None:
+def save_users_record_to_path(user_path: Path, users_set: set) -> None:
     """ saves the user follow record to the specified user path destination with the datetime as the file names. 
 
     args:
         user_path (Path, str): an user path ex: "'userhandle'/'follow'" as file destination
         users (set): a user set containing user follows
     """
-    
     filename = time.strftime("%Y.%m.%d") + ".txt"       #   datetime as the filenames
     file_path = Path.cwd() / user_path                  #   the full path of dir
     file_path.mkdir(parents=True,exist_ok=True)         #   ensure the path of dir exists
-    
-    
     with open(file_path / filename ,'w') as file:
-        file.write(f"total number of users: ({len(users)})\n\n")
-        
-        users = sorted(f"{user}\n" for user in users)   # converts it to a list and then sort it
-        
+        file.write(f"total number of users: ({len(users_set)})\n\n")
+        users = sorted(f"{user}\n" for user in users_set)   # converts it to a list and then sort it
         file.writelines(users)
-        
     print(f"user handles saved to : \n{file_path / filename}\n")
         
 
@@ -383,12 +328,6 @@ def return_all_records(path:str) -> list[Path]:
 
 
 if __name__ == "__main__":
-    # # from icecream import ic
-    debug = True
-    if debug:
-        print(Path.cwd())
-        sys.exit()
-    
     try:
         print("initialize first...")
         os.system("cls")
