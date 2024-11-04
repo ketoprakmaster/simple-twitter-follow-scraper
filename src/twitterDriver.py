@@ -1,4 +1,3 @@
-# %%
 from pathlib import Path
 # from icecream import ic
 
@@ -97,7 +96,7 @@ def scrape_user_follows(user_path: str,driver) -> set:
     
     returns None if users_list (set) is empty.
     """
-    driver.get(f"https://x.com{user_path}")
+    driver.get(f"https://x.com/{user_path}")
     users_list, count = set(),int()
     while True:
         try:
@@ -113,10 +112,10 @@ def scrape_user_follows(user_path: str,driver) -> set:
         else:
             count += 1  # increment the count by one
             if count <= 7:
+                scroll_down(driver)
                 continue
             if input("coninue scraping? (y/n)").lower() in ['n','no']:
                 break     
-        scroll_down(driver)
     # Extract the user elements
     if not users_list:
         raise UserScrapeOperationFailed("no user has been scraped...")
