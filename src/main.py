@@ -87,8 +87,7 @@ def inittialze_tracking_process():
         driver = initialize_driver(options)
         username = get_user_handle(driver)
         userpath = f"{username}/{mode}"
-        driver.get(f"https://x.com/{userpath}")
-        users_follows = scrape_user_follows(driver)
+        users_follows = scrape_user_follows(userpath, driver)
         save_and_compare_user_follows(userpath,users_follows)
     except NoSuchWindowException:
         print("\nno windows is detected,aborting the program")
