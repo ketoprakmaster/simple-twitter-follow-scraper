@@ -17,8 +17,6 @@ import undetected_chromedriver as uc
 import os
 import time
 
-
-
 # # performance counter
 # def clean_exec_time(fnc):
 #     def wrapper(*args, **kwargs):
@@ -32,8 +30,6 @@ import time
 
 class UserScrapeOperationFailed(Exception):
     "general catch all term for when failing scraping users follows"
-
-
 
 def initialize_driver(headless:bool = False):
     while True:
@@ -60,7 +56,6 @@ def initialize_driver(headless:bool = False):
     
     return driver
 
-
 def get_user_handle(driver) -> str:
     """get the user handle from twitter on an instance of driver web"""
     driver.get("https://x.com/home")
@@ -73,8 +68,6 @@ def get_user_handle(driver) -> str:
     user_handle = element.get_attribute("data-testid").split('-')[-1]
     print(f"\nuser handle acquired: {user_handle}\n")
     return user_handle
-        
-    
 
 def scroll_down(driver):
     # Calculate the height to scroll (scrolling halfway)
@@ -86,7 +79,6 @@ def scroll_down(driver):
 
     # Scroll halfway down
     driver.execute_script(f"window.scrollTo(0, {target_scroll_position});")    
-
 
 def scrape_user_follows(user_path: str,driver) -> set:
     """scrape a users follows as it scrolls down the webpages
@@ -114,14 +106,15 @@ def scrape_user_follows(user_path: str,driver) -> set:
             if count <= 7:
                 scroll_down(driver)
                 continue
-            if input("coninue scraping? (y/n)").lower() in ['n','no']:
+            if "y" in input("coninue scraping? (y/n)").lower():
+                continue
+            else:
                 break     
     # Extract the user elements
     if not users_list:
         raise UserScrapeOperationFailed("no user has been scraped...")
     
     return users_list
-
 
 # @clean_exec_time 
 def scrape_users_on_page(driver) -> set:
@@ -149,8 +142,6 @@ def scrape_users_on_page(driver) -> set:
         print(f"number of stale element exception occured: {len(exceptlist)}")
         
     return users
-
-
 
 def check_user_follow(driver,href) -> int:
     """check users following on the webpage. 
