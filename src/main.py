@@ -1,6 +1,6 @@
 print("application initialize...")
 
-from core.inputCLI import inittialze_tracking_process,check_recent_comparison,manual_file_comparison,setting_up_browser,clear
+from core.inputCLI import inittialze_tracking_process,check_recent_comparison,manual_file_comparison,setting_up_browser, clear
 
 
 def main():  
@@ -19,7 +19,6 @@ def main():
             "1": inittialze_tracking_process,
             "2": check_recent_comparison,
             "3": manual_file_comparison,
-            "x": exit,
             "v": setting_up_browser
         }
         
@@ -28,8 +27,10 @@ def main():
             if choice in options:
                 options[choice]()
                 input("\n\npress any key to continue")
+            elif 'x' in choice:
+                break
         except KeyboardInterrupt:
-            pass
+            break
 
 
 
