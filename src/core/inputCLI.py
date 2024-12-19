@@ -1,11 +1,8 @@
 import tkinter
-import os
-import time
-
-from pathlib import Path
 from tkinter import filedialog
 from core.twitterDriver import *
 from core.userHandling import *
+from core import clear
 
 def file_selection() -> Path:
     while True:
@@ -30,7 +27,7 @@ def file_selection() -> Path:
             continue
 
 def inittialze_tracking_process(): 
-    os.system("cls")
+    clear()
     driver = ''
     try:
         options = options_yes_or_no("run browser in headless mode? (y/n)")
@@ -86,7 +83,7 @@ def check_recent_comparison(user_path:str = ''):
     output_users_changes(users)
   
 def manual_file_comparison():
-    os.system("cls")
+    clear()
     print("select your past records for comparison\n")    
     past_user_list = read_from_record(file_selection())
 
@@ -97,7 +94,7 @@ def manual_file_comparison():
     output_users_changes(users=users_changes)
 
 def setting_up_browser():
-    os.system("cls")
+    clear()
     driver = initialize_driver()
     print("\nsetting up browser profile for twitter scrape to work..\nafter finishing the login process press enter to quit\n")
     input()

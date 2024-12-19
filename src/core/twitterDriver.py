@@ -1,6 +1,3 @@
-from pathlib import Path
-# from icecream import ic
-
 # from selenium import webdriver
 from selenium.webdriver.common.by import By
 # from selenium.webdriver.chrome.options import Options
@@ -13,20 +10,7 @@ from selenium.common.exceptions import NoSuchElementException
 from selenium.common.exceptions import TimeoutException
 
 import undetected_chromedriver as uc
-
-import os
-import time
-
-# # performance counter
-# def clean_exec_time(fnc):
-#     def wrapper(*args, **kwargs):
-#         t0 = time.perf_counter()
-#         val = fnc(*args, **kwargs)
-#         t1 = time.perf_counter()
-#         print(f"time elapsed: {t1-t0}")
-#         return val
-#     return wrapper
-
+from core import *
 
 class UserScrapeOperationFailed(Exception):
     "general catch all term for when failing scraping users follows"
@@ -52,7 +36,7 @@ def initialize_driver(headless:bool = False):
             print(e)
             print("\n\nfailed to initialize the chromedriver..\nmake sure you have internet connection\n")
             input("press any key to continue\n")
-            os.system('cls')
+            clear()
     
     return driver
 

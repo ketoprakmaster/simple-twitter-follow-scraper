@@ -1,14 +1,11 @@
 print("application initialize...")
 
-from core.inputCLI import inittialze_tracking_process,check_recent_comparison,manual_file_comparison,setting_up_browser
-
-import sys
-import os
+from core.inputCLI import inittialze_tracking_process,check_recent_comparison,manual_file_comparison,setting_up_browser,clear
 
 
 def main():  
     while True:
-        os.system('cls')
+        clear()
         
         print("select which operation you want to choose:\n\n")
         print("[1]. run a new tracking scene")
@@ -37,12 +34,7 @@ def main():
 
 
 if __name__ == "__main__":
-    try:
-        print("initialize first...")
-        os.system("cls")
-        main()
-        sys.exit()
-    except KeyboardInterrupt:
-        pass
+    main()
+    
     
 
