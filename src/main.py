@@ -25,6 +25,7 @@ def main():
         try:
             choice = input('\n\n:').lower()
             if choice in options:
+                clear()
                 options[choice]()
                 input("\n\npress any key to continue")
             elif 'x' in choice:

@@ -7,13 +7,6 @@ class USER(enum.Enum):
     BANNED = enum.auto()
     DELETED = enum.auto()
 
-class notEnoughFileToCompare(Exception):
-    "when not enough users records is made for comparison"
-    
-    def __init__(self, records: list[Path]) -> None:
-        records = [record.name for record in records]
-        self.message:str = f"not enough users records to be made for comparison..\nall user records: {records}"
-        super().__init__(self.message)
 
 ### python files users class/list handling #####
 def save_users_record_to_path(user_path: Path, users_set: set) -> None:
@@ -27,9 +20,8 @@ def save_users_record_to_path(user_path: Path, users_set: set) -> None:
     file_path = Path.cwd() / user_path                  #   the full path of dir
     file_path.mkdir(parents=True,exist_ok=True)         #   ensure the path of dir exists
     with open(file_path / filename ,'w') as file:
-        file.write(f"total number of users: ({len(users_set)})\n\n")
-        users = sorted(f"{user}\n" for user in users_set)   # converts it to a list and then sort it
-        file.writelines(users)
+        obj = {"total_follows": len(users_set),"users":users_set}
+        json.dump(obj,file,indent=4)
     print(f"user handles saved to : \n{file_path / filename}\n")
 
 def save_accumulated_records(user_path: Path) -> None:
@@ -39,20 +31,18 @@ def save_accumulated_records(user_path: Path) -> None:
     """
     # retrieve all users records from a given user_path.
     # if it fails to vailidate it will return
-    try:
-        all_records = returns_atleast_two_user_records(user_path=user_path)
-    except (FileNotFoundError,notEnoughFileToCompare) as e:
-        print(e)
+    user_records = return_all_records(user_path)
+    if len(user_records) < 2:
+        print("not enough users records to be made for comparison..")
         return
     
     # read the entire user records from beginning (except from the last/newest [-1]) to the end 
     past_users_set = set()
-    for record in all_records[:-1]:
+    for record in user_records[:-1]:
         past_users_set.update(read_from_record(record))
     
     # read the newest record from a certain user
-    current_users_set = read_from_record(all_records[-1])
-    
+    current_users_set = read_from_record(user_records[-1])
     users_dict = users_records_comparison(past_users_set,current_users_set)
 
     with open(Path.cwd() / user_path / "all_user_records.txt",'w')as file:
@@ -126,24 +116,12 @@ def read_from_recent_user_records(user_path:str) -> set[str]:
 
 def read_from_record(full_path:Path) -> set[str]:
     """input the full path of an user record in order to read it successfully, returns a set"""
-    # print(f"reading user record from: {full_path}")
     
-    users = full_path.read_text()
-    users = {line.lower() for line in users.split("\n") if "@" in line}
-    
-    return users
+    with open(full_path,"r") as obj:
+        users = json.load(obj)["users"]
 
-def returns_atleast_two_user_records(user_path:str) -> list[Path]:
-    """return a valid users records (list[Path]) necessary for two seperate user records for comparison.
-    
-    raises an exception if not enough (atleast 2) user follow record that is needed to make a comparison"""
-    # retrieve all users records from a given user_path
-    all_records = return_all_records(path=user_path)
-    
-    if len(all_records) <= 1:
-        raise notEnoughFileToCompare(all_records)
-    
-    return all_records
+    return set(users)
+
    
 def return_all_records(path:str) -> list[Path]:
     """given a user path it will return a list of user records with an full path to each.
@@ -155,7 +133,8 @@ def return_all_records(path:str) -> list[Path]:
     
     allRecords = []
     for file in path.glob("*.txt"):
-        if "all" not in file.name:
-            allRecords.append(file)
+        if "all" in file.name:
+            continue
+        allRecords.append(file)
     
     return allRecords

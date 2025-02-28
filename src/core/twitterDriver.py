@@ -87,13 +87,11 @@ def scrape_user_follows(user_path: str,driver) -> set:
             print(f"{user.ljust(50,'.')}: added ({len(users_list)})")
         else:
             count += 1  # increment the count by one
-            if count <= 7:
+            if count <= 20:
                 scroll_down(driver)
                 continue
-            if "y" in input("coninue scraping? (y/n)").lower():
-                continue
             else:
-                break     
+                break  
     # Extract the user elements
     if not users_list:
         raise UserScrapeOperationFailed("no user has been scraped...")
@@ -105,7 +103,9 @@ def scrape_users_on_page(driver) -> set:
     """scrape the user elements on page. required args driver (chrome) returns a (set) containing user handles"""
     time.sleep(.2)  # Adjust sleep time as needed
     users, exceptlist = set(), list()
-    user_elements = WebDriverWait(driver,3).until(EC.presence_of_all_elements_located((By.XPATH, "//div[@data-testid='cellInnerDiv']")))
+    user_elements = WebDriverWait(driver,10).until(
+        EC.presence_of_all_elements_located((By.XPATH, "//div[@data-testid='cellInnerDiv']"))
+    )
     if not user_elements:
         raise NoSuchElementException("no element is detected within webpages")
     for elements in user_elements:
@@ -131,7 +131,9 @@ def check_user_follow(driver,href) -> int:
     """check users following on the webpage. 
     required an args of both selenium driver (chrome) and href (str) for element location.
     returns a number of follow as an int"""
-    elem = driver.find_element(By.XPATH,f"//a[translate(@href,'ABCDEFGHIJKLMNOPQERSSTUVWXYZ','abcdefghijklmnopqerstuvwxyz') = '/{href}']")
+    driver.get(f"https://x.com/{href.split('/')[0]}")
+    time.sleep(5)
+    elem = driver.find_element(By.XPATH,f"//a[translate(@href,'ABCDEFGHIJKLMNOPQERSSTUVWXYZ','abcdefghijklmnopqerstuvwxyz') = '/{href.lower()}']")
     elem = ''.join(n for n in elem.text if n.isdigit())
     
     return int(elem) 

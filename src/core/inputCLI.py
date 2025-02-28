@@ -71,9 +71,12 @@ def check_recent_comparison(user_path:str = ''):
     
     # retrieve all users records from given user_path
     try:
-        all_records = returns_atleast_two_user_records(user_path)
-    except (FileNotFoundError, notEnoughFileToCompare) as e:
+        all_records = return_all_records(user_path)
+    except FileNotFoundError as e:
         print(e)
+        return
+    if len(all_records) < 2:
+        print("not enough users records to be made for comparison..")
         return
     
     past_user_list = read_from_record(all_records[-2])
@@ -98,8 +101,8 @@ def setting_up_browser():
     driver = initialize_driver()
     print("\nsetting up browser profile for twitter scrape to work..\nafter finishing the login process press enter to quit\n")
     input()
-    driver.quit()
-    
+    driver.quit()  
+
 def options_for_which_follow(msg: str = "\n[1]. following (default)\n[2]. followers\n") -> str: 
     "either returns 'following' or 'followers' or None"
     print(msg)
