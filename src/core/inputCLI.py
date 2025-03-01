@@ -27,7 +27,6 @@ def file_selection() -> Path:
             continue
 
 def inittialze_tracking_process(): 
-    clear()
     driver = ''
     try:
         options = options_yes_or_no("run browser in headless mode? (y/n)")
@@ -36,68 +35,34 @@ def inittialze_tracking_process():
         username = get_user_handle(driver)
         userpath = f"{username}/{mode}"
         users_follows = scrape_user_follows(userpath, driver)
-        save_and_compare_user_follows(userpath,users_follows)
-    except NoSuchWindowException:
-        print("\nno windows is detected,aborting the program")
-        return  
-    except UserScrapeOperationFailed as e:
-        print(e)
-        return
-    except KeyboardInterrupt:
+        save_users_record_to_path(userpath,users_follows)
+        compare_recent_records(userpath)
+    except NotEnoughUserRecords:
+        print("not enough users records to be made for comparison..")
         pass
     finally:
         if driver:driver.quit()
     
-def save_and_compare_user_follows(user_path: str,users_set: set):
-    try:
-        users_dict = users_records_comparison(
-            users_past = read_from_recent_user_records(user_path),
-            users_future = users_set
-        )
-    except FileNotFoundError as e:
-        print(e)
-        save_users_record_to_path(user_path,users_set)
-    output_users_changes(users_dict)
-    save_users_record_to_path(user_path,users_set)
-    save_accumulated_records(user_path)   
- 
-def check_recent_comparison(user_path:str = ''):
+def check_recent_comparison(userpath:str = ''):
     #input the specified target
-    if not user_path:
-        username = input("which user records to compare?").lower()
+    if not userpath:
+        username = input("which user records to compare?\n\n:").lower()
         mode = options_for_which_follow("\nwhich user follow you want to compare?")
         
-        user_path = f"{username}/{mode}"
+        userpath = f"{username}/{mode}"
     
-    # retrieve all users records from given user_path
-    try:
-        all_records = return_all_records(user_path)
-    except FileNotFoundError as e:
-        print(e)
-        return
-    if len(all_records) < 2:
-        print("not enough users records to be made for comparison..")
-        return
-    
-    past_user_list = read_from_record(all_records[-2])
-    current_user_list = read_from_record(all_records[-1])
-    
-    users = users_records_comparison(past_user_list,current_user_list)
-    output_users_changes(users)
+    compare_recent_records(userpath)
   
 def manual_file_comparison():
-    clear()
     print("select your past records for comparison\n")    
     past_user_list = read_from_record(file_selection())
 
     print("select your future records for comparison\n")
     future_user_list = read_from_record(file_selection())
             
-    users_changes = users_records_comparison(past_user_list,future_user_list)
-    output_users_changes(users=users_changes)
+    records_comparison(past_user_list,future_user_list)
 
 def setting_up_browser():
-    clear()
     driver = initialize_driver()
     print("\nsetting up browser profile for twitter scrape to work..\nafter finishing the login process press enter to quit\n")
     input()
@@ -113,7 +78,6 @@ def options_for_which_follow(msg: str = "\n[1]. following (default)\n[2]. follow
             case "2" | "followers": 
                 mode = "followers"
             case _:
-                print("try again")
                 continue
         break
     return mode

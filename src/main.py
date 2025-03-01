@@ -1,7 +1,7 @@
 print("application initialize...")
 
 from core.inputCLI import inittialze_tracking_process,check_recent_comparison,manual_file_comparison,setting_up_browser, clear
-
+from core import UserScrapeOperationFailed, NotEnoughUserRecords, FiledecodeError
 
 def main():  
     while True:
@@ -22,21 +22,25 @@ def main():
             "v": setting_up_browser
         }
         
-        try:
-            choice = input('\n\n:').lower()
-            if choice in options:
-                clear()
+        choice = input('\n\n:').lower()
+        if choice in options:
+            clear()
+            try:
                 options[choice]()
-                input("\n\npress any key to continue")
-            elif 'x' in choice:
-                break
-        except KeyboardInterrupt:
+            except (UserScrapeOperationFailed, FileNotFoundError, FiledecodeError) as e:
+               print(e)
+            input("\n\npress any key to continue")
+        elif 'x' in choice:
             break
+        
 
 
 
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+    except KeyboardInterrupt:
+        pass
     
     
 

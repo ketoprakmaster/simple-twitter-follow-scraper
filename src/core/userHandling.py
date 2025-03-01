@@ -20,7 +20,7 @@ def save_users_record_to_path(user_path: Path, users_set: set) -> None:
     file_path = Path.cwd() / user_path                  #   the full path of dir
     file_path.mkdir(parents=True,exist_ok=True)         #   ensure the path of dir exists
     with open(file_path / filename ,'w') as file:
-        obj = {"total_follows": len(users_set),"users":users_set}
+        obj = {"total_follows": len(users_set),"users":sorted(users_set)}
         json.dump(obj,file,indent=4)
     print(f"user handles saved to : \n{file_path / filename}\n")
 
@@ -33,7 +33,6 @@ def save_accumulated_records(user_path: Path) -> None:
     # if it fails to vailidate it will return
     user_records = return_all_records(user_path)
     if len(user_records) < 2:
-        print("not enough users records to be made for comparison..")
         return
     
     # read the entire user records from beginning (except from the last/newest [-1]) to the end 
@@ -43,7 +42,7 @@ def save_accumulated_records(user_path: Path) -> None:
     
     # read the newest record from a certain user
     current_users_set = read_from_record(user_records[-1])
-    users_dict = users_records_comparison(past_users_set,current_users_set)
+    users_dict = records_comparison(past_users_set,current_users_set)
 
     with open(Path.cwd() / user_path / "all_user_records.txt",'w')as file:
         # USER.EXIST writes
@@ -59,25 +58,33 @@ def save_accumulated_records(user_path: Path) -> None:
     
     print(f"user entire records saved to : \n{Path(user_path) / "all_user_records.txt"}\n")
 
-def users_records_comparison(users_past:set ,users_future: set ) -> dict[USER,set]:
+def records_comparison(users_past:set ,users_future: set ) -> dict[USER,set]:
     """
     making a comparison between 2 users records (set).
     
     returns a (dict) containing USER.MISSING, USER.ADDED, AND USERS.EXIST as a set."""
     users = {}
-
     # check if user record from past records difference to future user record
     # user record from the past that is missing is considered as missing (USER.MISSING)
     users[USER.MISSING] = users_past.difference(users_future)
-    
     # check if users record from the future records difference to past user record
     # if a user from future record is missing from the past, that user will be considered added (USER.ADDED)
     users[USER.ADDED] = users_future.difference(users_past)
-    
     # add the current users as USERS.EXIST
     users[USER.EXIST] = users_future
-    
+    output_users_changes(users)
     return users
+
+def compare_recent_records(user_path:str) -> None:
+    "check existing saved user record if sufficient records exists (atleast 2)" 
+    all_records = return_all_records(user_path)
+    
+    if len(all_records) < 2:
+       raise NotEnoughUserRecords(f"Not enough user records for comparison. \n{"\n".join(all_records)}")
+
+    past_user_list = read_from_record(all_records[-2])
+    current_user_list = read_from_record(all_records[-1])
+    users = records_comparison(past_user_list,current_user_list)
 
 def output_users_changes(users: dict) -> None:
     """requires an argument (dict) containing both USER.MISSING and USER.ADDED, then output it onto a terminal"""
@@ -116,17 +123,18 @@ def read_from_recent_user_records(user_path:str) -> set[str]:
 
 def read_from_record(full_path:Path) -> set[str]:
     """input the full path of an user record in order to read it successfully, returns a set"""
-    
-    with open(full_path,"r") as obj:
-        users = json.load(obj)["users"]
-
+    try:
+        with open(full_path,"r") as obj:
+            users = json.load(obj)["users"]
+    except json.JSONDecodeError:
+        raise FiledecodeError(f"failed to decode json path:\n{full_path}")
     return set(users)
 
    
-def return_all_records(path:str) -> list[Path]:
+def return_all_records(user_path:str) -> list[Path]:
     """given a user path it will return a list of user records with an full path to each.
     Raises an exception if the specified directory of folders/file does not exist"""
-    path = Path.cwd() / path
+    path = Path.cwd() / user_path
     
     if not path.exists():
         raise FileNotFoundError(f"invalid.. no directory exists\ndirectory  in question: {path}\n")
@@ -138,3 +146,4 @@ def return_all_records(path:str) -> list[Path]:
         allRecords.append(file)
     
     return allRecords
+

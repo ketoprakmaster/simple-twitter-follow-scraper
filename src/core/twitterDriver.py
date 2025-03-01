@@ -12,8 +12,6 @@ from selenium.common.exceptions import TimeoutException
 import undetected_chromedriver as uc
 from core import *
 
-class UserScrapeOperationFailed(Exception):
-    "general catch all term for when failing scraping users follows"
 
 def initialize_driver(headless:bool = False):
     while True:
