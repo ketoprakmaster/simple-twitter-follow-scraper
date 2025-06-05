@@ -17,12 +17,15 @@ def initialize_driver(headless:bool = False):
     while True:
         try:
             user_profile = Path.cwd() / 'profile'
+            proxy = get_proxy()
             options = uc.ChromeOptions()
             options.add_argument(f"--user-data-dir={user_profile}")
             options.add_argument('--disable-blink-features=AutomationControlled')
+            if (proxy): 
+                options.add_argument(f"--proxy-server:{proxy}")
             if headless:
                 # chrome headless is a bit buggy, it makes a huge blank window on desktop when using 
-                # --headles mode.
+                # --headless mode.
                 # so i copy pasted one of the stackoverflow "solution" of just moving it away from users 
                 # screen so that it can't be seen
                 options.add_argument(f"--window-position=-2400,-2400")
@@ -136,5 +139,26 @@ def check_user_follow(driver,href) -> int:
     
     return int(elem) 
 
+def get_proxy() -> str | None:
+    """
+    Retrieves a proxy from 'proxy_list.txt'.
+    If the file doesn't exist, is empty, or if the list is malformed,
+    it returns None. Otherwise, it returns a randomly selected proxy string.
+    """
+    proxy_file_path = Path.cwd() / "proxy_list.txt"
 
+    if not proxy_file_path.exists():
+        print(f"Warning: Proxy file not found at {proxy_file_path}")
+        return None
 
+    with open(proxy_file_path, "r") as f:
+        # Read all lines and strip whitespace, filter out empty lines
+        proxies = [line.strip() for line in f if line.strip()]
+        
+    if not proxies:
+        print(f"Warning: Proxy file '{proxy_file_path}' is empty or contains no valid proxies.")
+        return None
+
+    # Return a randomly selected proxy from the list
+    return random.choice(proxies)
+            

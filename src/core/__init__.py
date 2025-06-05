@@ -3,6 +3,8 @@ import time
 import enum
 import os
 import json
+import random
+#import logging
 
 class UserScrapeOperationFailed(Exception):
     "general catch all term for when failing scraping users follows"
@@ -15,3 +17,4 @@ class FiledecodeError(Exception):
 
 def clear():
     os.system("cls")
+
