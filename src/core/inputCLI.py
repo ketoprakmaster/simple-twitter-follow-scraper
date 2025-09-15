@@ -1,66 +1,100 @@
-import tkinter
-from tkinter import filedialog
+# import tkinter
+# from tkinter import filedialog
 from core.twitterDriver import *
 from core.userHandling import *
-from core import clear
 
-def file_selection() -> Path:
+# from . import UserRecordsNotExists
+
+# set the cli logging
+consoleLog = logging.getLogger("console")
+
+def file_selection(directory: Path) -> Path:
+    """
+    Lists files in a given directory and allows the user to select one.
+    Returns the full path of the selected file, or None if no file is selected.
+    """
+    files = [file for file in directory.glob("*") if file.is_file()]
+    if not files:
+        consoleLog.error(f"No files found in '{directory}'.")
+        raise UserRecordsNotExists(f"no files exists in : {directory}")
+    consoleLog.info(f"total files : {len(files)}")
     while True:
+        clear()
+        print(f"user directory : \n{directory}\n")
+        for i, file_name in enumerate(files):
+            print(f"{i + 1}. {file_name}")
         try:
-            root = tkinter.Tk()
-            root.withdraw()  # Hide the main tkinter window
-            root.wm_attributes('-topmost', 1) 
-            file = filedialog.askopenfilename(initialdir=Path.cwd())
-
-            if not file or not os.access(file, os.R_OK) or not file.endswith('txt'):
-                print("please choose a file ")
+            choice = int(input("Enter the number of the file to select:"))
+            index = choice - 1
+            if index < len(files):
+                consoleLog.info(f"files selected: {files[index]} at index: {index}")
+                return files[index]
+            else:
                 continue
-            
-            print(file)
-            return Path(file)
-        
-        except FileNotFoundError:
-            print("file not found!")
-        except Exception as e:
-            print(e)
-            time.sleep(2)
+        except ValueError:
             continue
 
-def inittialze_tracking_process(): 
-    driver = ''
-    try:
-        options = options_yes_or_no("run browser in headless mode? (y/n)")
-        mode = options_for_which_follow()
-        driver = initialize_driver(options)
-        username = get_user_handle(driver)
-        userpath = f"{username}/{mode}"
-        users_follows = scrape_user_follows(userpath, driver)
-        save_users_record_to_path(userpath,users_follows)
-        compare_recent_records(userpath)
-    except NotEnoughUserRecords:
-        print("not enough users records to be made for comparison..")
-        pass
-    finally:
-        if driver:driver.quit()
-    
-def check_recent_comparison(userpath:str = ''):
-    #input the specified target
-    if not userpath:
-        username = input("which user records to compare?\n\n:").lower()
-        mode = options_for_which_follow("\nwhich user follow you want to compare?")
-        
-        userpath = f"{username}/{mode}"
-    
-    compare_recent_records(userpath)
-  
-def manual_file_comparison():
-    print("select your past records for comparison\n")    
-    past_user_list = read_from_record(file_selection())
 
-    print("select your future records for comparison\n")
-    future_user_list = read_from_record(file_selection())
-            
-    records_comparison(past_user_list,future_user_list)
+# TODO: do better exception handling
+def inittialze_tracking_process():
+    # configure the settings for scraping operations
+    mode = optionsWhichFollows()
+    headless = optionsBrowserHeadless()
+    
+    # initializing the drivers
+    clear()
+    driver = initialize_driver(headless)
+    
+    # fetch the usernames of logged in twitter accounts
+    username = get_user_handle(driver)
+    
+    #scrape the user follows
+    users_follows = scrape_user_follows(username,mode, driver)
+    driver.quit()
+    
+    # saving the users records
+    save_users_record_to_path(username,mode,users_follows)
+    results = compare_recent_records(username,mode)
+    outputComparisonResults(results)
+        
+def quickUserComparison():
+    """input the username and which records to make comparison out off"""
+    username = input("which user records to compare?\n\n:").lower()
+    mode = optionsWhichFollows()
+    
+    # get the comparison results
+    result = compare_recent_records(username,mode)
+    
+    # output the results
+    outputComparisonResults(record=result)
+
+# TODO: there must be a cleaner way to do this right?
+def manual_file_comparison():
+    # configure which users you want to choose
+    username = input("which users you want to compare?").lower()
+    mode = optionsWhichFollows()
+    
+    # check if path exist
+    userPath = USER_RECORDS / username / mode
+    if not userPath.exists or not username:
+        consoleLog.error(f"no users records exist in dir: {USER_RECORDS / username / mode}")
+        input()
+        return
+
+    try:
+        print("select the past user records")
+        past_user_list = file_selection(userPath)
+        past_user_list = read_from_record(past_user_list)
+                
+        print("select the future/current user records")
+        future_user_list = file_selection(userPath)
+        future_user_list = read_from_record(future_user_list)
+    except UserRecordsNotExists:
+        input()
+        return
+
+    results = makeComparison(past_user_list,future_user_list)
+    outputComparisonResults(results)  
 
 def setting_up_browser():
     driver = initialize_driver()
@@ -68,29 +102,55 @@ def setting_up_browser():
     input()
     driver.quit()  
 
-def options_for_which_follow(msg: str = "\n[1]. following (default)\n[2]. followers\n") -> str: 
-    "either returns 'following' or 'followers' or None"
-    print(msg)
+def optionsBrowserHeadless() -> bool:
+    """chosing and configure the browsers options"""
     while True:
-        match input("\n:").lower():
+        clear()
+        # run the browser as headless or not (default true)
+        choice = input("run browser as headless? [y/n] [default: true] :").lower()
+        if "n" in choice:
+            headless = False
+            break
+        elif "y" in choice or not choice:
+            headless = True
+            break
+        continue
+    return headless
+        
+def optionsWhichFollows() -> MODE:
+    """sprcify which users follow to scrape"""
+    while True:
+        clear()
+        match input("which users follows you choose\n[1]. following (default)\n[2]. followers\n:").lower():
             case "1" | "following" | "":
-                mode = "following"
+                mode = MODE.following
             case "2" | "followers": 
-                mode = "followers"
+                mode = MODE.followers
             case _:
                 continue
         break
     return mode
 
-def options_yes_or_no(msg: str = "options (y/n)") -> bool:  
-    "by default just pressing enter counts as 'yes'"
-    print(msg)
-    while True:
-        choice =  input("\n:").lower()
-        if "y" in choice or not choice:
-            return True
-        elif "n" in choice:
-            return False
-        else:
-            print("try again")
-            continue
+
+def outputComparisonResults(record: comparisonResults) -> None:
+    """requires an argument (comparisonResults) for showing changes and output it onto a terminal"""
+    # ouput an user that is missing
+    print("\n"+" Missings Users : ".center(70,"="))
+    for user in record.removed:
+        print(f"{user} is missing!")       
+    if not record.removed:
+        print("no compared users that are missing..\n")
+    else:
+        print(f"\ntotal missing users: {len(record.removed)}\n")
+     
+    # ouput an user that is added
+    print(" Added Users : ".center(70,"=")) 
+    for user in record.added:
+        print(f"{user} is added!")
+
+    if not record.added:
+        print("no compared users that are added..\n")
+    else:
+        print(f"\ntotal added users: {len(record.added)}\n")
+    
+    input()
