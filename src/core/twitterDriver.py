@@ -21,7 +21,7 @@ class TwitterDriver:
         self.mode: MODE = mode
         self.driver_log = logging.getLogger("driver")
 
-    def initialize_driver(self):
+    def initialize_driver(self) -> None:
         """
         Initializes the Selenium Chrome driver with undetected-chromedriver.
         Loads user profile and proxy if available.
@@ -41,7 +41,7 @@ class TwitterDriver:
 
         self.driver = uc.Chrome(options=options)
 
-    def get_user_handle(self):
+    def get_user_handle(self) -> str:
         """
         Fetches the logged-in Twitter username by accessing the homepage.
         Sets `self.username` if successful.
@@ -63,7 +63,7 @@ class TwitterDriver:
         self.driver_log.info(f"User handle acquired: {self.username}")
         return self.username
 
-    def scroll_down(self):
+    def scroll_down(self) -> None:
         """
         Scrolls down the webpage by twice the window height.
         Helps in lazy-loading Twitter follow elements.
@@ -165,7 +165,7 @@ class TwitterDriver:
         count = ''.join(c for c in elem.text if c.isdigit())
         return int(count)
 
-    def get_proxy(self) -> str | None:
+    def get_proxy(self) -> list[str] | None:
         """
         Retrieves a proxy from 'proxy_list.txt' if available.
 

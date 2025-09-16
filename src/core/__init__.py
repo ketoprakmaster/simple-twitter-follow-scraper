@@ -25,7 +25,7 @@ def clear():
 
 def pause(msg: str = "\npress to continue.."):
     """pausing until any key presses"""
-    input()
+    input(msg)
 
 class MODE(enum.StrEnum):
     following = "following"

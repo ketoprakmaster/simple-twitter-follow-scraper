@@ -1,6 +1,6 @@
 print("application initialize...")
 
-from core.inputCLI import initializeNewTrackingProcess, quickUserComparison,manualFileComparison,configuringBrowsers, clear
+from core.inputCLI import initialize_new_tracking_process, quick_user_comparison,manual_file_comparison,configure_browser_login, clear
 from core import UserScrapeOperationFailed, NotEnoughUserRecords, FiledecodeError
 
 def main():  
@@ -16,10 +16,10 @@ def main():
         print("[v]. open browser to set up (recomended for first launch)")
         
         options = {
-            "1": initializeNewTrackingProcess,
-            "2": quickUserComparison,
-            "3": manualFileComparison,
-            "v": configuringBrowsers
+            "1": initialize_new_tracking_process,
+            "2": quick_user_comparison,
+            "3": manual_file_comparison,
+            "v": configure_browser_login
         }
         
         choice = input('\n\n:').lower()
