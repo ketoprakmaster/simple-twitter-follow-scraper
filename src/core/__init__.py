@@ -20,7 +20,12 @@ class UserRecordsNotExists(Exception):
     "no users records exist"
 
 def clear():
+    """flushing the cli"""
     os.system("cls")
+
+def pause(msg: str = "\npress to continue.."):
+    """pausing until any key presses"""
+    input()
 
 class MODE(enum.StrEnum):
     following = "following"
@@ -51,11 +56,11 @@ class comparisonResults():
     added: set[str] = field(default_factory=set)
     
 # set global variables:
-USER_PROFILE = Path.cwd() / "profile"
-USER_RECORDS = Path.cwd() / "records"
+USER_PROFILE_DIR = Path.cwd() / "profile"
+USER_RECORDS_DIR = Path.cwd() / "records"
 driver = None
 
-if USER_PROFILE.exists:
-    logging.info(f"current users profile : {USER_PROFILE}")
+if USER_PROFILE_DIR.exists:
+    logging.info(f"current users profile : {USER_PROFILE_DIR}")
 else:
     logging.warning("no users profile detected, it will generated a new one instead")

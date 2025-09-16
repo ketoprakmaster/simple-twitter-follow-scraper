@@ -4,24 +4,26 @@ from core import *
 userLog = logging.getLogger("users")
 
 ### python files users class/list handling #####
-def read_from_record(fullPath:Path) -> set[str]:
+def readFromRecords(fullPath:Path) -> set[str]:
     """input the full path of an user record in order to read it successfully, returns a set"""
     try:
         with open(fullPath,"r") as obj:
             users = json.load(obj)["users"]
     except json.JSONDecodeError:
+        userLog.error(f"failed to decode json path: {fullPath}")
         raise FiledecodeError(f"failed to decode json path:{fullPath}")
     return set(users)
 
    
-def return_all_records(username : str = None, mode : MODE = None, path: Path = None) -> list[Path]:
-    """given a user path it will return a list of user records with an full path to each.
+def returnAllRecords(username : str = None, mode : MODE = None, path: Path = None) -> list[Path]:
+    """either give a user path whole or separately, it will return a list of user records with an full path to each.
     Raises an exception if the specified directory of folders/file does not exist"""
     if not path:
-        path : Path = USER_RECORDS / username / mode
+        path : Path = USER_RECORDS_DIR / username / mode
     
     if not path.exists():
-        raise FileNotFoundError(f"invalid.. no directory exists, directory  in question: {path=}")
+        userLog.error(f"invalid directory, doesn't exist: {path}")
+        raise UserRecordsNotExists(f"invalid.. no directory exists, directory  in question: {path=}")
     
     allRecords = []
     for file in path.glob("*"):
@@ -30,23 +32,24 @@ def return_all_records(username : str = None, mode : MODE = None, path: Path = N
         allRecords.append(file)
     
     if not allRecords:
+        userLog.error(f"no users records exists : {path}")
         raise UserRecordsNotExists(f"no user records exists in : {path}")
     
     return allRecords
 
-
-def read_from_recent_user_records(username: str, mode: MODE) -> set[str]:
+# NOTE: unused functions
+def readFromRecentRecord(username: str, mode: MODE) -> set[str]:
     """given a user path (str) which contains a users records history.
     returns a (set) of user follow from the newest record
     
     Raises an exception if the specified directory of folders/file does not exist"""
     
-    record = return_all_records(username, mode)
+    record = returnAllRecords(username, mode)
     
-    return read_from_record(record[-1])
+    return readFromRecords(record[-1])
 
 
-def save_users_record_to_path(username: str, mode: MODE, users_set: set) -> None:
+def saveUsersRecord(username: str, mode: MODE, users_set: set) -> None:
     """ saves the user follow record to the specified user path destination with the datetime as the file names. 
 
     args:
@@ -55,7 +58,7 @@ def save_users_record_to_path(username: str, mode: MODE, users_set: set) -> None
         users (set): a user set containing user follows
     """
     filename = time.strftime("%Y.%m.%d") + ".json"          #   datetime as the filenames
-    file_path = USER_RECORDS / username / mode              #   the full path of dir
+    file_path = USER_RECORDS_DIR / username / mode              #   the full path of dir
     file_path.mkdir(parents=True,exist_ok=True)             #   ensure the path of dir exists
     with open(file_path / filename ,'w') as file:
         obj = {"total_follows": len(users_set),"users":sorted(users_set)}
@@ -78,19 +81,24 @@ def makeComparison(users_past:set ,users_future: set ) -> comparisonResults:
     return comparisonResults(removed=missings,added=added)
 
 
-def compare_recent_records(username: str, mode: MODE) -> comparisonResults:
-    "check existing saved user record if sufficient records exists (atleast 2)" 
-    all_records = return_all_records(username, mode)
+def compareRecentRecords(username: str, mode: MODE) -> comparisonResults:
+    """check existing saved user record if sufficient records exists (atleast 2)
     
-    if len(all_records) < 2:
-       raise NotEnoughUserRecords(f"Not enough user records for comparison. {all_records=}")
+    raises an exception (NotEnoughUserRecords) if it lacks sufficient records
+    and (UserRecordsNotExists) if its invalid""" 
 
-    past_user_list = read_from_record(all_records[-2])
-    current_user_list = read_from_record(all_records[-1])
+    allRecords = returnAllRecords(username, mode)
+    
+    if len(allRecords) < 2:
+        userLog.warning(f"not enough users record for comparison. {allRecords=}")
+        raise NotEnoughUserRecords(f"Not enough user records for comparison. {allRecords=}")
+
+    past_user_list = readFromRecords(allRecords[-2])
+    current_user_list = readFromRecords(allRecords[-1])
     
     # log the fetch records
-    userLog.info(f"past record: {all_records[-2]}")
-    userLog.info(f"current record: {all_records[-1]}")
+    userLog.info(f"past record: {allRecords[-2]}")
+    userLog.info(f"current record: {allRecords[-1]}")
     
     results = makeComparison(past_user_list,current_user_list)
     

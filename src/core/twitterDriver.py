@@ -15,11 +15,11 @@ from core import *
 # set the logging
 driverLog = logging.getLogger("driver")
 
-def initialize_driver(headless:bool = False):
+def initializeDriver(headless:bool = False):
     """initialize new drivers, also checks for proxy if available"""
     driverLog.info(f"initializing new driver")
     options = uc.ChromeOptions()
-    options.add_argument(f"--user-data-dir={USER_PROFILE}")
+    options.add_argument(f"--user-data-dir={USER_PROFILE_DIR}")
     options.add_argument('--disable-blink-features=AutomationControlled')
     proxy = get_proxy()
     if (proxy): 
@@ -30,7 +30,7 @@ def initialize_driver(headless:bool = False):
     driver = uc.Chrome(options=options)
     return driver
 
-def get_user_handle(driver) -> str:
+def getUserHandle(driver) -> str:
     """get the user handle from twitter on an instance of driver web"""
     driverLog.info("getting user handle")
     driver.get("https://x.com/home")
@@ -44,7 +44,7 @@ def get_user_handle(driver) -> str:
     driverLog.info(f"user handle acquired: {user_handle}")
     return user_handle
 
-def scroll_down(driver):
+def scrollDown(driver):
     # Calculate the height to scroll (scrolling halfway)
     window_height = driver.execute_script("return window.innerHeight;")
 
@@ -55,7 +55,7 @@ def scroll_down(driver):
     # Scroll halfway down
     driver.execute_script(f"window.scrollTo(0, {target_scroll_position});")    
 
-def scrape_user_follows(username: str, mode: MODE ,driver) -> set:
+def scrapeUserFollow(username: str, mode: MODE ,driver) -> set[str]:
     """scrape a users follows as it scrolls down the webpages
     
     required args: driver (chrome), username (str), and mode (MODE) a user dir/pointer. 
@@ -68,7 +68,7 @@ def scrape_user_follows(username: str, mode: MODE ,driver) -> set:
     users_list, count = set(),int()
     while True:
         try:
-            users = scrape_users_on_page(driver)
+            users = scrapeUserOnPage(driver)
         except NoSuchElementException:
             driverLog.error("\nno such element is detected..proceed to refreshing the webpage\n")
             driver.refresh();time.sleep(4)
@@ -80,7 +80,7 @@ def scrape_user_follows(username: str, mode: MODE ,driver) -> set:
         else:
             count += 1  # increment the count by one
             if count <= 20:
-                scroll_down(driver)
+                scrollDown(driver)
                 continue
             else:
                 break  
@@ -91,7 +91,7 @@ def scrape_user_follows(username: str, mode: MODE ,driver) -> set:
     driverLog.info(f"users scraped: {len(users_list)}")
     return users_list
 
-def scrape_users_on_page(driver) -> set:
+def scrapeUserOnPage(driver) -> set:
     """scrape the user elements on page. required args driver (chrome) returns a (set) containing user handles"""
     time.sleep(.2)  # Adjust sleep time as needed
     users, exceptlist = set(), list()
@@ -119,7 +119,8 @@ def scrape_users_on_page(driver) -> set:
         
     return users
 
-def check_user_follow(driver,href) -> int:
+# NOTE: unused functions
+def checkUserFollow(driver,href) -> int:
     """check users following on the webpage. 
     required an args of both selenium driver (chrome) and href (str) for element location.
     returns a number of follow as an int"""
@@ -130,6 +131,7 @@ def check_user_follow(driver,href) -> int:
     
     return int(elem) 
 
+# NOTE: had not been tested yet
 def get_proxy() -> str | None:
     """
     Retrieves a proxy from 'proxy_list.txt'.

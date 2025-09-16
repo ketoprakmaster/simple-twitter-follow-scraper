@@ -8,23 +8,24 @@ from core.userHandling import *
 # set the cli logging
 consoleLog = logging.getLogger("console")
 
-def file_selection(directory: Path) -> Path:
+# TODO: better cli and UX
+def fileSelection(directory: Path, msg: str = "") -> Path:
     """
     Lists files in a given directory and allows the user to select one.
     Returns the full path of the selected file, or None if no file is selected.
     """
-    files = return_all_records(path=directory)
+    files = returnAllRecords(path=directory)
     consoleLog.info(f"total files : {len(files)}")
     while True:
         clear()
-        print(f"user directory : \n{directory}\n")
+        print(f"{msg}\n\nuser directory : \n{directory}\n")
         for i, file_name in enumerate(files):
             print(f"{i + 1}. {file_name}")
         try:
             choice = int(input("Enter the number of the file to select:"))
             index = choice - 1
-            if index < len(files):
-                consoleLog.info(f"files selected: {files[index]} at index: {index}")
+            if 0 <= index < len(files):
+                clear()
                 return files[index]
             else:
                 continue
@@ -33,78 +34,83 @@ def file_selection(directory: Path) -> Path:
 
 
 # TODO: do better exception handling
-def inittialze_tracking_process():
+def initializeNewTrackingProcess():
     # configure the settings for scraping operations
     mode = optionsWhichFollows()
     headless = optionsBrowserHeadless()
+    clear()
     
     try:
         # initializing the drivers
-        clear()
-        driver = initialize_driver(headless)
+        driver = initializeDriver(headless)
         # fetch the usernames of logged in twitter accounts
-        username = get_user_handle(driver)
+        username = getUserHandle(driver)
         #scrape the user follows
-        users_follows = scrape_user_follows(username,mode, driver)
+        users_follows = scrapeUserFollow(username,mode, driver)
     except Exception as e:
         driverLog.error(f"failed to initialize drivers.. make sure you had good internet connection\n{e}")
-        input()
+        pause()
         return
     finally:
         driver.quit()
     
     # saving the users records and make comparison
-    save_users_record_to_path(username,mode,users_follows)
+    saveUsersRecord(username,mode,users_follows)
     try:
-        results = compare_recent_records(username,mode)
+        results = compareRecentRecords(username,mode)
         outputComparisonResults(results)
-    except NotEnoughUserRecords:
-        consoleLog.warning("not enough users records for comparison!")
-        input()
+    except (NotEnoughUserRecords, UserRecordsNotExists, FiledecodeError):
+        pause()
         
 def quickUserComparison():
     """input the username and which records to make comparison out off"""
     username = input("which user records to compare?\n\n:").lower()
     mode = optionsWhichFollows()
     
-    # get the comparison results
-    result = compare_recent_records(username,mode)
+    # get the comparison results, skip if not sufficient
+    try:
+        result = compareRecentRecords(username,mode)
+    except (NotEnoughUserRecords, UserRecordsNotExists, FiledecodeError):
+        pause()
+        return
     
     # output the results
     outputComparisonResults(record=result)
 
 # TODO: there must be a cleaner way to do this right?
-def manual_file_comparison():
+def manualFileComparison():
     # configure which users you want to choose
     username = input("which users you want to compare?").lower()
     mode = optionsWhichFollows()
     
     # check if path exist
-    userPath = USER_RECORDS / username / mode
+    userPath = USER_RECORDS_DIR / username / mode
     if not userPath.exists or not username:
-        consoleLog.error(f"no users records exist in dir: {USER_RECORDS / username / mode}")
-        input()
+        consoleLog.error(f"no users records exist in dir: {USER_RECORDS_DIR / username / mode}")
+        pause()
         return
 
     try:
-        print("select the past user records")
-        past_user_list = file_selection(userPath)
-        past_user_list = read_from_record(past_user_list)
+        pastUserPath = fileSelection(userPath,msg="select the users past records")
+        usersPast = readFromRecords(pastUserPath)
                 
-        print("select the future/current user records")
-        future_user_list = file_selection(userPath)
-        future_user_list = read_from_record(future_user_list)
+        futureUserPath = fileSelection(userPath,msg="select the users future records")
+        usersFuture = readFromRecords(futureUserPath)
+        
+        clear()
+        consoleLog.info(f"past files selected: {pastUserPath}")
+        consoleLog.info(f"future files selected: {futureUserPath}")
     except (UserRecordsNotExists, FileNotFoundError):
-        input()
+        pause()
         return
 
-    results = makeComparison(past_user_list,future_user_list)
+    results = makeComparison(usersPast,usersFuture)
     outputComparisonResults(results)  
 
-def setting_up_browser():
-    driver = initialize_driver()
+def configuringBrowsers():
+    driver = initializeDriver()
     print("\nsetting up browser profile for twitter scrape to work..\nafter finishing the login process press enter to quit\n")
-    input()
+    pause()
     driver.quit()  
 
 def optionsBrowserHeadless() -> bool:
@@ -123,7 +129,7 @@ def optionsBrowserHeadless() -> bool:
     return headless
         
 def optionsWhichFollows() -> MODE:
-    """sprcify which users follow to scrape"""
+    """specify which users follow to scrape"""
     while True:
         clear()
         match input("which users follows you choose\n[1]. following (default)\n[2]. followers\n:").lower():
@@ -158,4 +164,4 @@ def outputComparisonResults(record: comparisonResults) -> None:
     else:
         print(f"\ntotal added users: {len(record.added)}\n")
     
-    input()
+    pause()
