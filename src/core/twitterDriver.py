@@ -1,157 +1,194 @@
-# from selenium import webdriver
 from selenium.webdriver.common.by import By
-# from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
-
-from selenium.common.exceptions import StaleElementReferenceException
-from selenium.common.exceptions import NoSuchWindowException
-from selenium.common.exceptions import NoSuchElementException
-from selenium.common.exceptions import TimeoutException
+from selenium.common.exceptions import *
 
 import undetected_chromedriver as uc
 from core import *
 
-# set the logging
-driverLog = logging.getLogger("driver")
+class TwitterDriver:
+    def __init__(self, headless: bool = False, mode: MODE = MODE.following):
+        """
+        TwitterDriver handles scraping Twitter user follows via Selenium automation.
 
-def initializeDriver(headless:bool = False):
-    """initialize new drivers, also checks for proxy if available"""
-    driverLog.info(f"initializing new driver")
-    options = uc.ChromeOptions()
-    options.add_argument(f"--user-data-dir={USER_PROFILE_DIR}")
-    options.add_argument('--disable-blink-features=AutomationControlled')
-    proxy = get_proxy()
-    if (proxy): 
-        options.add_argument(f"--proxy-server:{proxy}")
-    if headless:
-        options.add_argument(f"--headless")
-        options.add_argument(f"--headless=new")
-    driver = uc.Chrome(options=options)
-    return driver
+        Args:
+            headless (bool): Whether to run the browser in headless mode.
+            mode (MODE): Mode of scraping, either 'following' or 'followers'.
+        """
+        self.headless = headless
+        self.driver = None
+        self.username: str = None
+        self.mode: MODE = mode
+        self.driver_log = logging.getLogger("driver")
 
-def getUserHandle(driver) -> str:
-    """get the user handle from twitter on an instance of driver web"""
-    driverLog.info("getting user handle")
-    driver.get("https://x.com/home")
-    try:
-        element = WebDriverWait(driver,10).until(
-            EC.presence_of_element_located((By.XPATH,"//button[@aria-label='Account menu']//*[@data-testid]"))
-        )
-    except TimeoutException:
-        raise UserScrapeOperationFailed("\ntimeout exception, possibly due to no user login exist yet\nplease ensure that your logins on twitter exist in order to scrape successfully.")
-    user_handle = element.get_attribute("data-testid").split('-')[-1]
-    driverLog.info(f"user handle acquired: {user_handle}")
-    return user_handle
+    def initialize_driver(self):
+        """
+        Initializes the Selenium Chrome driver with undetected-chromedriver.
+        Loads user profile and proxy if available.
+        """
+        self.driver_log.info("Initializing new driver")
+        options = uc.ChromeOptions()
+        options.add_argument(f"--user-data-dir={USER_PROFILE_DIR}")
+        options.add_argument('--disable-blink-features=AutomationControlled')
 
-def scrollDown(driver):
-    # Calculate the height to scroll (scrolling halfway)
-    window_height = driver.execute_script("return window.innerHeight;")
+        proxy = self.get_proxy()
+        if proxy:
+            options.add_argument(f"--proxy-server={proxy}")
 
-    # Calculate the initial and target scroll positions
-    initial_scroll_position = driver.execute_script("return window.pageYOffset;")
-    target_scroll_position = initial_scroll_position + (window_height * 2)
+        if self.headless:
+            options.add_argument("--headless")
+            options.add_argument("--headless=new")
 
-    # Scroll halfway down
-    driver.execute_script(f"window.scrollTo(0, {target_scroll_position});")    
+        self.driver = uc.Chrome(options=options)
 
-def scrapeUserFollow(username: str, mode: MODE ,driver) -> set[str]:
-    """scrape a users follows as it scrolls down the webpages
-    
-    required args: driver (chrome), username (str), and mode (MODE) a user dir/pointer. 
-    Returns a (set) containing 'Hopefully' the entire user follows.
-    
-    Raise Errors if users_list (set) is empty.
-    """
-    driverLog.info(f"start scraping {username} {mode}'s ")
-    driver.get(f"https://x.com/{username}/{mode}")
-    users_list, count = set(),int()
-    while True:
+    def get_user_handle(self):
+        """
+        Fetches the logged-in Twitter username by accessing the homepage.
+        Sets `self.username` if successful.
+        """
+        if self.username:
+            self.driver_log.info(f"Username already acquired: {self.username}")
+            return self.username
+
+        self.driver_log.info("Getting user handle")
+        self.driver.get("https://x.com/home")
         try:
-            users = scrapeUserOnPage(driver)
-        except NoSuchElementException:
-            driverLog.error("\nno such element is detected..proceed to refreshing the webpage\n")
-            driver.refresh();time.sleep(4)
-            continue
-        for user in users.difference(users_list):
-            users_list.add(user)
-            count = 0   # set the count to zero
-            print(f"{user.ljust(50,'.')}: added ({len(users_list)})")
-        else:
-            count += 1  # increment the count by one
-            if count <= 20:
-                scrollDown(driver)
+            element = WebDriverWait(self.driver, 10).until(
+                EC.presence_of_element_located((By.XPATH, "//button[@aria-label='Account menu']//*[@data-testid]"))
+            )
+        except TimeoutException:
+            raise UserScrapeOperationFailed("Timeout: No user login detected. Log in to Twitter first.")
+
+        self.username = element.get_attribute("data-testid").split('-')[-1]
+        self.driver_log.info(f"User handle acquired: {self.username}")
+        return self.username
+
+    def scroll_down(self):
+        """
+        Scrolls down the webpage by twice the window height.
+        Helps in lazy-loading Twitter follow elements.
+        """
+        window_height = self.driver.execute_script("return window.innerHeight;")
+        current_scroll = self.driver.execute_script("return window.pageYOffset;")
+        target_scroll = current_scroll + (window_height * 2)
+        self.driver.execute_script(f"window.scrollTo(0, {target_scroll});")
+
+    def scrape_user_follows(self) -> set[str]:
+        """
+        Scrapes the users that the logged-in account is following (or its followers).
+        Automatically scrolls and accumulates all visible users.
+
+        Returns:
+            Set[str]: A set of Twitter handles scraped.
+
+        Raises:
+            UserScrapeOperationFailed: If no users are scraped.
+        """
+        self.get_user_handle()
+        self.driver_log.info(f"Scraping {self.username} [{self.mode}]")
+
+        self.driver.get(f"https://x.com/{self.username}/{self.mode}")
+        users_list = set()
+        empty_scrolls = 0
+
+        while True:
+            try:
+                new_users = self._scrape_users_on_page()
+            except NoSuchElementException:
+                self.driver_log.error("No element detected, refreshing page...")
+                self.driver.refresh()
+                time.sleep(4)
                 continue
+            # tracked the difference and prints any new users that had been scraped by
+            diff = new_users - users_list 
+            for user in diff:
+                empty_scrolls = 0
+                users_list.add(user)
+                print(f"{user.ljust(50, '.')} added ({len(users_list)})")
+            if not diff:
+                empty_scrolls += 1
+                if empty_scrolls > 20:
+                    break
             else:
-                break  
-    # Extract the user elements
-    if not users_list:
-        raise UserScrapeOperationFailed("no user has been scraped...")
-    
-    driverLog.info(f"users scraped: {len(users_list)}")
-    return users_list
+                empty_scrolls = 0
+            self.scroll_down()
+        if not users_list:
+            raise UserScrapeOperationFailed("No users were scraped.")
 
-def scrapeUserOnPage(driver) -> set:
-    """scrape the user elements on page. required args driver (chrome) returns a (set) containing user handles"""
-    time.sleep(.2)  # Adjust sleep time as needed
-    users, exceptlist = set(), list()
-    user_elements = WebDriverWait(driver,10).until(
-        EC.presence_of_all_elements_located((By.XPATH, "//div[@data-testid='cellInnerDiv']"))
-    )
-    if not user_elements:
-        raise NoSuchElementException("no element is detected within webpages")
-    for elements in user_elements:
-        # mitigates stale element exception
-        try:
-            elements = elements.text.split('\n')
-        except StaleElementReferenceException as e:
-            exceptlist.append(e)
-            continue
-        if len(elements) <= 1:
-            # print(f"not enough user elements to scrape out of: {elements}")
-            continue
-        users_handle : str = elements[1]
-        if not users_handle:
-            continue
-        users.add(users_handle.lower())
-    if exceptlist:
-        driverLog.warning(f"number of stale element exception occured: {len(exceptlist)}")
-        
-    return users
+        self.driver_log.info(f"Total users scraped: {len(users_list)}")
+        return users_list
 
-# NOTE: unused functions
-def checkUserFollow(driver,href) -> int:
-    """check users following on the webpage. 
-    required an args of both selenium driver (chrome) and href (str) for element location.
-    returns a number of follow as an int"""
-    driver.get(f"https://x.com/{href.split('/')[0]}")
-    time.sleep(5)
-    elem = driver.find_element(By.XPATH,f"//a[translate(@href,'ABCDEFGHIJKLMNOPQERSSTUVWXYZ','abcdefghijklmnopqerstuvwxyz') = '/{href.lower()}']")
-    elem = ''.join(n for n in elem.text if n.isdigit())
-    
-    return int(elem) 
+    def _scrape_users_on_page(self) -> set[str]:
+        """
+        Helper method to extract visible Twitter handles from the current page.
 
-# NOTE: had not been tested yet
-def get_proxy() -> str | None:
-    """
-    Retrieves a proxy from 'proxy_list.txt'.
-    If the file doesn't exist, is empty, or if the list is malformed,
-    it returns None. Otherwise, it returns a randomly selected proxy string.
-    """
-    proxy_file_path = Path.cwd() / "proxy_list.txt"
-    
-    if not proxy_file_path.exists():
-        driverLog.warning(f"Proxy file not found at {proxy_file_path}")
-        return None
-    
-    with open(proxy_file_path, "r") as f:
-        # Read all lines and strip whitespace, filter out empty lines
-        proxies = [line.strip() for line in f if line.strip()]  
-        
-    if not proxies:
-        driverLog.warning(f"Proxy file '{proxy_file_path}' is empty or contains no valid proxies.")
-        return None
-    
-    # Return a randomly selected proxy from the list
-    return random.choice(proxies)
+        Returns:
+            Set[str]: A set of lowercased Twitter handles.
+
+        Raises:
+            NoSuchElementException: If no expected elements are found.
+        """
+        time.sleep(0.2)
+        users = set()
+        user_elements = WebDriverWait(self.driver, 10).until(
+            EC.presence_of_all_elements_located((By.XPATH, "//div[@data-testid='cellInnerDiv']"))
+        )
+
+        for el in user_elements:
+            try:
+                lines = el.text.split("\n")
+                if len(lines) > 1:
+                    users.add(lines[1].lower())
+            except StaleElementReferenceException:
+                continue
+
+        return users
+
+    def check_user_follow(self, href: str) -> int:
+        """
+        Check the number of followers or following from a user's profile page.
+
+        Args:
+            href (str): URL path to the follow section, e.g., 'username/following'.
+
+        Returns:
+            int: The numeric count of followers/following.
+
+        NOTE: Currently unused and untested.
+        """
+        self.driver.get(f"https://x.com/{href.split('/')[0]}")
+        time.sleep(5)
+        elem = self.driver.find_element(
+            By.XPATH,
+            f"//a[translate(@href,'ABCDEFGHIJKLMNOPQRSTUVWXYZ','abcdefghijklmnopqrstuvwxyz') = '/{href.lower()}']"
+        )
+        count = ''.join(c for c in elem.text if c.isdigit())
+        return int(count)
+
+    def get_proxy(self) -> str | None:
+        """
+        Retrieves a proxy from 'proxy_list.txt' if available.
+
+        Returns:
+            str | None: A proxy address, or None if unavailable or file is malformed.
             
+        NOTE: Currently unused and untested.
+        """
+        proxy_file_path = Path.cwd() / "proxy_list.txt"
+        if not proxy_file_path.exists():
+            self.driver_log.warning(f"Proxy file not found: {proxy_file_path}")
+            return None
+        with open(proxy_file_path, "r") as f:
+            proxies = [line.strip() for line in f if line.strip()]
+        if not proxies:
+            self.driver_log.warning("Proxy list is empty.")
+            return None
+        return random.choice(proxies)
+
+    def quit(self) -> None:
+        """close the selenium browser if it had already exists"""
+        if self.driver:
+            self.driver_log.info("closing the browser")
+            self.driver.quit()
+        else:
+            self.driver_log.info("browser had already been closed")

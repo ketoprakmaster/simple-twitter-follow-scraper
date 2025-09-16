@@ -1,6 +1,6 @@
 # import tkinter
 # from tkinter import filedialog
-from core.twitterDriver import *
+from core.twitterDriver import TwitterDriver
 from core.userHandling import *
 
 # from . import UserRecordsNotExists
@@ -42,17 +42,18 @@ def initializeNewTrackingProcess():
     
     try:
         # initializing the drivers
-        driver = initializeDriver(headless)
-        # fetch the usernames of logged in twitter accounts
-        username = getUserHandle(driver)
+        twitterScraper = TwitterDriver(headless=headless,mode=mode)
+        twitterScraper.initialize_driver()
+
         #scrape the user follows
-        users_follows = scrapeUserFollow(username,mode, driver)
+        users_follows = twitterScraper.scrape_user_follows()
+        username = twitterScraper.username # fetch the username for the users records dir
     except Exception as e:
-        driverLog.error(f"failed to initialize drivers.. make sure you had good internet connection\n{e}")
+        consoleLog.error(f"failed to initialize drivers.. make sure you had good internet connection\n{e}")
         pause()
         return
     finally:
-        driver.quit()
+        twitterScraper.quit()
     
     # saving the users records and make comparison
     saveUsersRecord(username,mode,users_follows)
@@ -108,7 +109,8 @@ def manualFileComparison():
     outputComparisonResults(results)  
 
 def configuringBrowsers():
-    driver = initializeDriver()
+    driver = TwitterDriver(headless=False)
+    driver.initialize_driver
     print("\nsetting up browser profile for twitter scrape to work..\nafter finishing the login process press enter to quit\n")
     pause()
     driver.quit()  

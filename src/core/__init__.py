@@ -58,7 +58,6 @@ class comparisonResults():
 # set global variables:
 USER_PROFILE_DIR = Path.cwd() / "profile"
 USER_RECORDS_DIR = Path.cwd() / "records"
-driver = None
 
 if USER_PROFILE_DIR.exists:
     logging.info(f"current users profile : {USER_PROFILE_DIR}")
