@@ -32,6 +32,7 @@ def initialize_driver(headless:bool = False):
 
 def get_user_handle(driver) -> str:
     """get the user handle from twitter on an instance of driver web"""
+    driverLog.info("getting user handle")
     driver.get("https://x.com/home")
     try:
         element = WebDriverWait(driver,10).until(
@@ -69,7 +70,7 @@ def scrape_user_follows(username: str, mode: MODE ,driver) -> set:
         try:
             users = scrape_users_on_page(driver)
         except NoSuchElementException:
-            driverLog("\nno such element is detected..proceed to refreshing the webpage\n")
+            driverLog.error("\nno such element is detected..proceed to refreshing the webpage\n")
             driver.refresh();time.sleep(4)
             continue
         for user in users.difference(users_list):

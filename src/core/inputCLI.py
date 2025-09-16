@@ -13,10 +13,7 @@ def file_selection(directory: Path) -> Path:
     Lists files in a given directory and allows the user to select one.
     Returns the full path of the selected file, or None if no file is selected.
     """
-    files = [file for file in directory.glob("*") if file.is_file()]
-    if not files:
-        consoleLog.error(f"No files found in '{directory}'.")
-        raise UserRecordsNotExists(f"no files exists in : {directory}")
+    files = return_all_records(path=directory)
     consoleLog.info(f"total files : {len(files)}")
     while True:
         clear()
@@ -41,21 +38,29 @@ def inittialze_tracking_process():
     mode = optionsWhichFollows()
     headless = optionsBrowserHeadless()
     
-    # initializing the drivers
-    clear()
-    driver = initialize_driver(headless)
+    try:
+        # initializing the drivers
+        clear()
+        driver = initialize_driver(headless)
+        # fetch the usernames of logged in twitter accounts
+        username = get_user_handle(driver)
+        #scrape the user follows
+        users_follows = scrape_user_follows(username,mode, driver)
+    except Exception as e:
+        driverLog.error(f"failed to initialize drivers.. make sure you had good internet connection\n{e}")
+        input()
+        return
+    finally:
+        driver.quit()
     
-    # fetch the usernames of logged in twitter accounts
-    username = get_user_handle(driver)
-    
-    #scrape the user follows
-    users_follows = scrape_user_follows(username,mode, driver)
-    driver.quit()
-    
-    # saving the users records
+    # saving the users records and make comparison
     save_users_record_to_path(username,mode,users_follows)
-    results = compare_recent_records(username,mode)
-    outputComparisonResults(results)
+    try:
+        results = compare_recent_records(username,mode)
+        outputComparisonResults(results)
+    except NotEnoughUserRecords:
+        consoleLog.warning("not enough users records for comparison!")
+        input()
         
 def quickUserComparison():
     """input the username and which records to make comparison out off"""
@@ -89,7 +94,7 @@ def manual_file_comparison():
         print("select the future/current user records")
         future_user_list = file_selection(userPath)
         future_user_list = read_from_record(future_user_list)
-    except UserRecordsNotExists:
+    except (UserRecordsNotExists, FileNotFoundError):
         input()
         return
 

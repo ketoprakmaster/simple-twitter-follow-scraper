@@ -14,10 +14,11 @@ def read_from_record(fullPath:Path) -> set[str]:
     return set(users)
 
    
-def return_all_records(username : str, mode : MODE) -> list[Path]:
+def return_all_records(username : str = None, mode : MODE = None, path: Path = None) -> list[Path]:
     """given a user path it will return a list of user records with an full path to each.
     Raises an exception if the specified directory of folders/file does not exist"""
-    path : Path = USER_RECORDS / username / mode
+    if not path:
+        path : Path = USER_RECORDS / username / mode
     
     if not path.exists():
         raise FileNotFoundError(f"invalid.. no directory exists, directory  in question: {path=}")
@@ -27,6 +28,9 @@ def return_all_records(username : str, mode : MODE) -> list[Path]:
         if "all" in file.name:
             continue
         allRecords.append(file)
+    
+    if not allRecords:
+        raise UserRecordsNotExists(f"no user records exists in : {path}")
     
     return allRecords
 
