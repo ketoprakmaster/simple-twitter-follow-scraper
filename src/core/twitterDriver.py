@@ -104,7 +104,7 @@ class TwitterDriver:
             for user in diff:
                 empty_scrolls = 0
                 users_list.add(user)
-                print(f"{user.ljust(50, '.')} added ({len(users_list)})")
+                print(f"{user.ljust(50, '.')}:{Fore.CYAN}added ({len(users_list)}){Style.RESET_ALL}")
             if not diff:
                 empty_scrolls += 1
                 if empty_scrolls > 20:

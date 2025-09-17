@@ -1,19 +1,23 @@
 print("application initialize...")
 
 from core.inputCLI import initialize_new_tracking_process, quick_user_comparison,manual_file_comparison,configure_browser_login, clear
-from core import UserScrapeOperationFailed, NotEnoughUserRecords, FiledecodeError
+from core import *
 
 def main():  
     while True:
         clear()
         
         print("select which operation you want to choose:\n\n")
+        print(Fore.LIGHTCYAN_EX)
         print("[1]. run a new tracking scene")
         print("[2]. compares recent users record")
         print("[3]. file selection from the various list of users records")
+        print(Style.RESET_ALL)
         print("\n"+"="*60+"\n")
+        print(Fore.LIGHTYELLOW_EX)
         print("[x]. press and enter [x] to exit")
         print("[v]. open browser to set up (recomended for first launch)")
+        print(Style.RESET_ALL)
         
         options = {
             "1": initialize_new_tracking_process,

@@ -22,8 +22,8 @@ def file_selection(directory: Path, msg: str = "") -> Path:
     while True:
         clear()
         print(f"{msg}\n\nUser directory: {directory}\n")
-        for i, file_name in enumerate(files):
-            print(f"{i + 1}. {file_name}")
+        for i, file in enumerate(files):
+            print(f"{Fore.CYAN}[{i + 1}]. {file.name}{Style.RESET_ALL}")
         try:
             choice = int(input("Enter the number of the file to select: "))
             if 1 <= choice <= len(files):
@@ -111,7 +111,7 @@ def configure_browser_login():
     """
     driver = TwitterDriver(headless=False)
     driver.initialize_driver()  # ← THIS WAS A BUG! Previously it was missing ()
-    print("Log in to Twitter in the opened browser.\nPress ENTER here once done...")
+    print(Fore.YELLOW + "Log in to Twitter in the opened browser.\nPress ENTER here once done..." + Style.RESET_ALL)
     pause()
     driver.quit()
 
@@ -153,19 +153,19 @@ def output_comparison_results(record: comparisonResults) -> None:
     Args:
         record (comparisonResults): Result object from comparing records.
     """
-    print("\n" + " Missing Users ".center(70, "="))
+    print("\n" + " Missing Users ".center(70, "=") + "\n")
     for user in record.removed:
         print(f"{user} is {Fore.RED}missing!{Style.RESET_ALL}")
     if not record.removed:
-        print("No users removed.")
+        print(Fore.LIGHTCYAN_EX + "No users removed." + Style.RESET_ALL)
     else:
         print(f"\nTotal missing: {Fore.RED} {len(record.removed)} {Style.RESET_ALL}")
 
-    print("\n" + " Added Users ".center(70, "="))
+    print("\n" + " Added Users ".center(70, "=") + "\n")
     for user in record.added:
         print(f"{user} is{Fore.GREEN} added!{Style.RESET_ALL}")
     if not record.added:
-        print("No users added.")
+        print(Fore.LIGHTCYAN_EX + "No users added." + Style.RESET_ALL)
     else:
         print(f"\nTotal added: {Fore.GREEN} {len(record.added)} {Style.RESET_ALL}")    
         
