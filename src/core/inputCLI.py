@@ -155,18 +155,18 @@ def output_comparison_results(record: comparisonResults) -> None:
     """
     print("\n" + " Missing Users ".center(70, "="))
     for user in record.removed:
-        print(f"{user} is missing.")
+        print(f"{user} is {Fore.RED}missing!{Style.RESET_ALL}")
     if not record.removed:
         print("No users removed.")
     else:
-        print(f"\nTotal missing: {len(record.removed)}")
+        print(f"\nTotal missing: {Fore.RED} {len(record.removed)} {Style.RESET_ALL}")
 
     print("\n" + " Added Users ".center(70, "="))
     for user in record.added:
-        print(f"{user} is added.")
+        print(f"{user} is{Fore.GREEN} added!{Style.RESET_ALL}")
     if not record.added:
         print("No users added.")
     else:
-        print(f"\nTotal added: {len(record.added)}")
-    
+        print(f"\nTotal added: {Fore.GREEN} {len(record.added)} {Style.RESET_ALL}")    
+        
     pause()
