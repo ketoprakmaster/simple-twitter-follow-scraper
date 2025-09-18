@@ -105,12 +105,12 @@ def manual_file_comparison():
     output_comparison_results(results)
 
 
-def configure_browser_login():
+def configure_browser_login() -> None:
     """
     Launches browser in non-headless mode for the user to log in manually.
     """
     driver = TwitterDriver(headless=False)
-    driver.initialize_driver()  # ← THIS WAS A BUG! Previously it was missing ()
+    driver.initialize_driver()  
     print(Fore.YELLOW + "Log in to Twitter in the opened browser.\nPress ENTER here once done..." + Style.RESET_ALL)
     pause()
     driver.quit()
@@ -139,7 +139,7 @@ def ask_mode_selection() -> MODE:
     """
     while True:
         clear()
-        choice = input("Which mode to scrape?\n[1] Following (default)\n[2] Followers\n> ").lower()
+        choice = input("Which follow you want to operate?\n[1] Following (default)\n[2] Followers\n> ").lower()
         match choice:
             case "2" | "followers":
                 return MODE.followers

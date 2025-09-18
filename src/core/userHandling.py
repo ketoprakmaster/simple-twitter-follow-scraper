@@ -57,7 +57,7 @@ def saveUsersRecord(username: str, mode: MODE, users_set: set) -> None:
         mode (MODE): which user records to save (either following or followers)
         users (set): a user set containing user follows
     """
-    filename = time.strftime("%Y.%m.%d--%H.%M.%S") + ".json"          #   datetime as the filenames
+    filename = time.strftime("%Y.%m.%d %H.%M.%S") + ".json"          #   datetime as the filenames
     file_path = USER_RECORDS_DIR / username / mode              #   the full path of dir
     file_path.mkdir(parents=True,exist_ok=True)             #   ensure the path of dir exists
     with open(file_path / filename ,'w') as file:

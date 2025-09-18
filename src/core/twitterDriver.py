@@ -33,6 +33,7 @@ class TwitterDriver:
 
         proxy = self.get_proxy()
         if proxy:
+            self.driver_log.info(f"proxy selected: {proxy}")
             options.add_argument(f"--proxy-server={proxy}")
 
         if self.headless:
@@ -144,23 +145,28 @@ class TwitterDriver:
 
         return users
 
-    def check_user_follow(self, href: str) -> int:
+    def check_user_follow(self, username: str = None) -> int:
         """
         Check the number of followers or following from a user's profile page.
+        if username isn't provided it will check the current log in users instead
 
         Args:
-            href (str): URL path to the follow section, e.g., 'username/following'.
+            href (str): URL path to the users profile section.
 
         Returns:
             int: The numeric count of followers/following.
 
         NOTE: Currently unused and untested.
         """
-        self.driver.get(f"https://x.com/{href.split('/')[0]}")
+        if not username:
+            username = self.get_user_handle()
+        
+        self.driver_log.info(f"start fetching {username} follows")
+        self.driver.get(f"https://x.com/{username}")
         time.sleep(5)
         elem = self.driver.find_element(
             By.XPATH,
-            f"//a[translate(@href,'ABCDEFGHIJKLMNOPQRSTUVWXYZ','abcdefghijklmnopqrstuvwxyz') = '/{href.lower()}']"
+            f"//a[translate(@href,'ABCDEFGHIJKLMNOPQRSTUVWXYZ','abcdefghijklmnopqrstuvwxyz') = '/{username.lower()}']"
         )
         count = ''.join(c for c in elem.text if c.isdigit())
         return int(count)
