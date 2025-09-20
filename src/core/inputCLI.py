@@ -1,6 +1,7 @@
 from core.twitterDriver import TwitterDriver
 from core.userHandling import (
     compareRecentRecords,
+    compareToRecentUsersRecords,
     saveUsersRecord,
     readFromRecords,
     returnAllRecords,
@@ -54,11 +55,12 @@ def initialize_new_tracking_process():
     finally:
         scraper.quit()
 
-    saveUsersRecord(username, mode, users)
-    try:
-        results = compareRecentRecords(username, mode)
-        output_comparison_results(results)
-    except (NotEnoughUserRecords, UserRecordsNotExists, FiledecodeError):
+    results = compareToRecentUsersRecords(username, mode, users)
+    if results.added or results.removed:
+        saveUsersRecord(username=username,mode=mode,users_set=users)
+        output_comparison_results(record=results)
+    else:
+        console_log.info("no users changes detected, skip saving")
         pause()
 
 

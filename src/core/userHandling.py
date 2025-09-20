@@ -37,18 +37,19 @@ def returnAllRecords(username : str = None, mode : MODE = None, path: Path = Non
     
     return allRecords
 
-# NOTE: unused functions
-def readFromRecentRecord(username: str, mode: MODE) -> set[str]:
+
+def getUsersRecentRecords(username: str, mode: MODE) -> set[str]:
     """given a user path (str) which contains a users records history.
     returns a (set) of user follow from the newest record
     
     Raises an exception if the specified directory of folders/file does not exist"""
     
     record = returnAllRecords(username, mode)
+    userLog.info(f"current_records {record[-1]}")
     
     return readFromRecords(record[-1])
 
-
+@timing_decorator("saving users records")
 def saveUsersRecord(username: str, mode: MODE, users_set: set) -> None:
     """ saves the user follow record to the specified user path destination with the datetime as the file names. 
 
@@ -61,9 +62,9 @@ def saveUsersRecord(username: str, mode: MODE, users_set: set) -> None:
     file_path = USER_RECORDS_DIR / username / mode              #   the full path of dir
     file_path.mkdir(parents=True,exist_ok=True)             #   ensure the path of dir exists
     with open(file_path / filename ,'w') as file:
-        obj = {"total_follows": len(users_set),"users":sorted(users_set)}
+        obj = {"users":sorted(users_set)}
         json.dump(obj,file,indent=4)
-    logging.info(f"user handles saved to : {file_path}")
+    userLog.info(f"user handles saved to : {file_path}")
 
 
 def makeComparison(users_past:set ,users_future: set ) -> comparisonResults:
@@ -103,3 +104,23 @@ def compareRecentRecords(username: str, mode: MODE) -> comparisonResults:
     results = makeComparison(past_user_list,current_user_list)
     
     return results
+
+
+def compareToRecentUsersRecords(username: str, mode: MODE, users_set: set) -> comparisonResults :
+    """make comparison between the a users follow parameter and users most recent records
+    if users records does not exist return empty comparisonResults obj 
+
+    Args:
+        username (str): target username
+        mode (MODE): target follows
+        users_set (set): users following/followers list to make a comparison out off
+
+    Returns:
+        comparisonResults: an obj that contain users added/removed
+    """
+    try:
+        users_past = getUsersRecentRecords(username=username,mode=mode)
+    except (UserRecordsNotExists,FiledecodeError):
+        return comparisonResults()
+    
+    return makeComparison(users_past=users_past, users_future=users_set)
