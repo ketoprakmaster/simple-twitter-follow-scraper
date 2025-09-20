@@ -1,6 +1,7 @@
 from pathlib import Path
 from dataclasses import dataclass, field
 from colorama import Style, Fore
+from functools import wraps
 import time
 import enum
 import os
@@ -49,6 +50,19 @@ rootLogger.setLevel(logging.INFO)
 rootLogger.addHandler(stdout)
 rootLogger.addHandler(filelog)
 
+# function decorators for measuring execution time
+def timing_decorator(msg: str = ""):
+    def wrapper(func):
+        @wraps(func)  
+        def wrapped(*args, **kwargs):
+            start_time = time.perf_counter()
+            result = func(*args, **kwargs)
+            end_time = time.perf_counter()
+            execution_time = end_time - start_time
+            logging.info(f"{msg} took {execution_time:.4f} seconds.")
+            return result
+        return wrapped
+    return wrapper
 
 # struct for records comparison
 @dataclass(frozen=True)
@@ -57,10 +71,11 @@ class comparisonResults():
     added: set[str] = field(default_factory=set)
     
 # set global variables:
-USER_PROFILE_DIR = Path.cwd() / "profile"
-USER_RECORDS_DIR = Path.cwd() / "records"
+CURRENT_DIR : Path = Path.cwd()
+USER_PROFILE_DIR = CURRENT_DIR / "profile"
+USER_RECORDS_DIR = CURRENT_DIR / "records"
 
-if USER_PROFILE_DIR.exists:
+if USER_PROFILE_DIR.exists():
     logging.info(f"current users profile : {USER_PROFILE_DIR}")
 else:
     logging.warning("no users profile detected, it will generated a new one instead")

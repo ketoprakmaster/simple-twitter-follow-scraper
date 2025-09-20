@@ -21,6 +21,7 @@ class TwitterDriver:
         self.mode: MODE = mode
         self.driver_log = logging.getLogger("driver")
 
+    @timing_decorator(msg="initializing drivers")
     def initialize_driver(self) -> None:
         """
         Initializes the Selenium Chrome driver with undetected-chromedriver.
@@ -73,7 +74,8 @@ class TwitterDriver:
         current_scroll = self.driver.execute_script("return window.pageYOffset;")
         target_scroll = current_scroll + (window_height * 2)
         self.driver.execute_script(f"window.scrollTo(0, {target_scroll});")
-
+    
+    @timing_decorator(msg="scraping users")
     def scrape_user_follows(self) -> set[str]:
         """
         Scrapes the users that the logged-in account is following (or its followers).
@@ -92,27 +94,21 @@ class TwitterDriver:
         users_list = set()
         empty_scrolls = 0
 
-        while True:
-            try:
-                new_users = self._scrape_users_on_page()
-            except NoSuchElementException:
-                self.driver_log.error("No element detected, refreshing page...")
-                self.driver.refresh()
-                time.sleep(4)
-                continue
+        while empty_scrolls <= 20:
+            new_users = self._scrape_users_on_page()
             # tracked the difference and prints any new users that had been scraped by
             diff = new_users - users_list 
             for user in diff:
-                empty_scrolls = 0
                 users_list.add(user)
                 print(f"{user.ljust(50, '.')}:{Fore.CYAN}added ({len(users_list)}){Style.RESET_ALL}")
+            
             if not diff:
                 empty_scrolls += 1
-                if empty_scrolls > 20:
-                    break
             else:
                 empty_scrolls = 0
+            
             self.scroll_down()
+            
         if not users_list:
             raise UserScrapeOperationFailed("No users were scraped.")
 
@@ -180,15 +176,18 @@ class TwitterDriver:
             
         NOTE: Currently unused and untested.
         """
-        proxy_file_path = Path.cwd() / "proxy_list.txt"
+        proxy_file_path = CURRENT_DIR / "proxy_list.txt"
         if not proxy_file_path.exists():
             self.driver_log.warning(f"Proxy file not found: {proxy_file_path}")
             return None
+        
         with open(proxy_file_path, "r") as f:
             proxies = [line.strip() for line in f if line.strip()]
+            
         if not proxies:
             self.driver_log.warning("Proxy list is empty.")
             return None
+        
         return random.choice(proxies)
 
     def quit(self) -> None:
