@@ -1,5 +1,5 @@
 import logging
-from .config import LOG_FILE_PATH # Assuming you created a config.py
+from core.config import LOG_FILE_PATH
 
 def setup_logging():
     """Configures the root logger for the application."""

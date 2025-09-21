@@ -10,7 +10,7 @@ from core.utils import timing_decorator
 
 userLog = logging.getLogger("users")
 
-### python files users class/list handling #####
+
 def readFromRecords(fullPath:Path) -> set[str]:
     """input the full path of an user record in order to read it successfully, returns a set"""
     try:
@@ -112,22 +112,25 @@ def compareRecentRecords(username: str, mode: MODE) -> ComparisonResults:
     
     return results
 
+def process_new_scrape_results(username: str, mode: MODE, new_users: set) -> ComparisonResults:
+    """
+    Compares a new set of users against the most recent record.
+    Saves the new set if changes are detected.
 
-def compareToRecentUsersRecords(username: str, mode: MODE, users_set: set) -> ComparisonResults :
-    """make comparison between the a users follow parameter and users most recent records
-    if users records does not exist return empty ComparisonResults obj 
-
-    Args:
-        username (str): target username
-        mode (MODE): target follows
-        users_set (set): users following/followers list to make a comparison out off
-
-    Returns:
-        ComparisonResults: an obj that contain users added/removed
+    Returns the comparison results.
     """
     try:
-        users_past = getUsersRecentRecords(username=username,mode=mode)
-    except (UserRecordsNotExists,FiledecodeError):
-        return ComparisonResults()
-    
-    return makeComparison(users_past=users_past, users_future=users_set)
+        past_users = getUsersRecentRecords(username=username, mode=mode)
+    except (UserRecordsNotExists, FiledecodeError):
+        # If no previous valid record, all new users are "added"
+        saveUsersRecord(username=username, mode=mode, users_set=new_users)
+        return ComparisonResults(added=new_users)
+
+    # Perform the comparison
+    results = makeComparison(users_past=past_users, users_future=new_users)
+
+    # Save only if there are changes
+    if results.added or results.removed:
+        saveUsersRecord(username=username, mode=mode, users_set=new_users)
+
+    return results

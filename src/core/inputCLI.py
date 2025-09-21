@@ -1,11 +1,13 @@
+from selenium.common.exceptions import WebDriverException
+
 from core.twitterDriver import TwitterDriver
 from core.utils import pause, clear
-from core.exceptions import NotEnoughUserRecords, FiledecodeError, UserRecordsNotExists
+from core.exceptions import NotEnoughUserRecords, FiledecodeError, UserRecordsNotExists, UserScrapeOperationFailed
 from core.types import MODE, ComparisonResults
 from core.config import USER_RECORDS_DIR
 from core.userHandling import (
     compareRecentRecords,
-    compareToRecentUsersRecords,
+    process_new_scrape_results,
     saveUsersRecord,
     readFromRecords,
     returnAllRecords,
@@ -48,27 +50,27 @@ def initialize_new_tracking_process():
     """
     mode = ask_mode_selection()
     headless = ask_headless_mode()
-    clear()
 
     try:
         scraper = TwitterDriver(headless=headless, mode=mode)
         scraper.initialize_driver()
         users = scraper.scrape_user_follows()
         username = scraper.username
-    except Exception as e:
-        console_log.error(f"Failed to initialize scraper. Check internet connection.\n{e}")
+    except (WebDriverException, UserScrapeOperationFailed) as e:
+        console_log.error(f"A problem occurred during scraping: {e}")
+        console_log.info("This could be due to a poor internet connection, or if Twitter has blocked the request.")
         pause()
         return
     finally:
         scraper.quit()
-
-    results = compareToRecentUsersRecords(username, mode, users)
+    
+    results = process_new_scrape_results(username, mode, users)
     if results.added or results.removed:
-        saveUsersRecord(username=username,mode=mode,users_set=users)
         output_comparison_results(record=results)
     else:
-        console_log.info("no users changes detected, skip saving")
-        pause()
+        console_log.info("No user changes detected, skipping save.")
+    
+    pause()
 
 
 def quick_user_comparison():
@@ -177,5 +179,3 @@ def output_comparison_results(record: ComparisonResults) -> None:
         print(Fore.LIGHTCYAN_EX + "No users added." + Style.RESET_ALL)
     else:
         print(f"\nTotal added: {Fore.GREEN} {len(record.added)} {Style.RESET_ALL}")    
-        
-    pause()
