@@ -2,9 +2,21 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import *
+from colorama import Fore, Style
 
 import undetected_chromedriver as uc
-from core import *
+import logging
+import time
+import random
+
+from core.types import MODE
+from core.utils import timing_decorator
+from core.config import USER_PROFILE_DIR, CURRENT_DIR, MAX_EMPTY_SCROLLS, SCRAPE_TIMEOUT
+from core.exceptions import UserRecordsNotExists, NotEnoughUserRecords, UserScrapeOperationFailed
+
+class TwitterSelectors:
+    ACCOUNT_MENU_BUTTON = "//button[@aria-label='Account menu']//*[@data-testid]"
+    USER_CELL = "//div[@data-testid='cellInnerDiv']"
 
 class TwitterDriver:
     def __init__(self, headless: bool = False, mode: MODE = MODE.following):
@@ -27,6 +39,11 @@ class TwitterDriver:
         Initializes the Selenium Chrome driver with undetected-chromedriver.
         Loads user profile and proxy if available.
         """
+        if USER_PROFILE_DIR.exists():
+            self.driver_log.info(f"current users profile : {USER_PROFILE_DIR}")
+        else:
+            self.driver_log.warning("no users profile detected, it will generated a new one instead")
+        
         self.driver_log.info("Initializing new driver")
         options = uc.ChromeOptions()
         options.add_argument(f"--user-data-dir={USER_PROFILE_DIR}")
@@ -55,8 +72,8 @@ class TwitterDriver:
         self.driver_log.info("Getting user handle")
         self.driver.get("https://x.com/home")
         try:
-            element = WebDriverWait(self.driver, 10).until(
-                EC.presence_of_element_located((By.XPATH, "//button[@aria-label='Account menu']//*[@data-testid]"))
+            element = WebDriverWait(self.driver, SCRAPE_TIMEOUT).until(
+                EC.presence_of_element_located((By.XPATH, TwitterSelectors.ACCOUNT_MENU_BUTTON))
             )
         except TimeoutException:
             raise UserScrapeOperationFailed("Timeout: No user login detected. Log in to Twitter first.")
@@ -94,7 +111,7 @@ class TwitterDriver:
         users_list = set()
         empty_scrolls = 0
 
-        while empty_scrolls <= 20:
+        while empty_scrolls <= MAX_EMPTY_SCROLLS:
             new_users = self._scrape_users_on_page()
             # tracked the difference and prints any new users that had been scraped by
             diff = new_users - users_list 
@@ -127,8 +144,8 @@ class TwitterDriver:
         """
         time.sleep(0.2)
         users = set()
-        user_elements = WebDriverWait(self.driver, 10).until(
-            EC.presence_of_all_elements_located((By.XPATH, "//div[@data-testid='cellInnerDiv']"))
+        user_elements = WebDriverWait(self.driver, SCRAPE_TIMEOUT).until(
+            EC.presence_of_all_elements_located((By.XPATH, TwitterSelectors.USER_CELL))
         )
 
         for el in user_elements:
@@ -167,12 +184,11 @@ class TwitterDriver:
         count = ''.join(c for c in elem.text if c.isdigit())
         return int(count)
 
-    def get_proxy(self) -> list[str] | None:
-        """
-        Retrieves a proxy from 'proxy_list.txt' if available.
+    def get_proxy(self) -> str | None:
+        """Retrieves a proxy from 'proxy_list.txt' if available.
 
         Returns:
-            str | None: A proxy address, or None if unavailable or file is malformed.
+            (str, None): A proxy address, or None if unavailable or file is malformed.
             
         NOTE: Currently unused and untested.
         """

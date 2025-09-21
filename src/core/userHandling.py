@@ -1,6 +1,13 @@
-from core import *
+import json
+import logging
+import time
+from pathlib import Path
 
-# set the user log
+from core.types import MODE, ComparisonResults
+from core.exceptions import UserRecordsNotExists, NotEnoughUserRecords, FiledecodeError 
+from core.config import USER_RECORDS_DIR
+from core.utils import timing_decorator
+
 userLog = logging.getLogger("users")
 
 ### python files users class/list handling #####
@@ -67,11 +74,11 @@ def saveUsersRecord(username: str, mode: MODE, users_set: set) -> None:
     userLog.info(f"user handles saved to : {file_path}")
 
 
-def makeComparison(users_past:set ,users_future: set ) -> comparisonResults:
+def makeComparison(users_past:set ,users_future: set ) -> ComparisonResults:
     """
     making a comparison between 2 users records (set).
     
-    returns a object (comparisonResults) as a set."""
+    returns a object (ComparisonResults) as a set."""
     # check if user record from past records difference to future user record
     # user record from the past that is missing is considered as missing
     missings = users_past.difference(users_future)
@@ -79,10 +86,10 @@ def makeComparison(users_past:set ,users_future: set ) -> comparisonResults:
     # if a user from future record is missing from the past, that user will be considered added
     added = users_future.difference(users_past)
 
-    return comparisonResults(removed=missings,added=added)
+    return ComparisonResults(removed=missings,added=added)
 
 
-def compareRecentRecords(username: str, mode: MODE) -> comparisonResults:
+def compareRecentRecords(username: str, mode: MODE) -> ComparisonResults:
     """check existing saved user record if sufficient records exists (atleast 2)
     
     raises an exception (NotEnoughUserRecords) if it lacks sufficient records
@@ -106,9 +113,9 @@ def compareRecentRecords(username: str, mode: MODE) -> comparisonResults:
     return results
 
 
-def compareToRecentUsersRecords(username: str, mode: MODE, users_set: set) -> comparisonResults :
+def compareToRecentUsersRecords(username: str, mode: MODE, users_set: set) -> ComparisonResults :
     """make comparison between the a users follow parameter and users most recent records
-    if users records does not exist return empty comparisonResults obj 
+    if users records does not exist return empty ComparisonResults obj 
 
     Args:
         username (str): target username
@@ -116,11 +123,11 @@ def compareToRecentUsersRecords(username: str, mode: MODE, users_set: set) -> co
         users_set (set): users following/followers list to make a comparison out off
 
     Returns:
-        comparisonResults: an obj that contain users added/removed
+        ComparisonResults: an obj that contain users added/removed
     """
     try:
         users_past = getUsersRecentRecords(username=username,mode=mode)
     except (UserRecordsNotExists,FiledecodeError):
-        return comparisonResults()
+        return ComparisonResults()
     
     return makeComparison(users_past=users_past, users_future=users_set)

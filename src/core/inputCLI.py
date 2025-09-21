@@ -1,4 +1,8 @@
 from core.twitterDriver import TwitterDriver
+from core.utils import pause, clear
+from core.exceptions import NotEnoughUserRecords, FiledecodeError, UserRecordsNotExists
+from core.types import MODE, ComparisonResults
+from core.config import USER_RECORDS_DIR
 from core.userHandling import (
     compareRecentRecords,
     compareToRecentUsersRecords,
@@ -7,7 +11,10 @@ from core.userHandling import (
     returnAllRecords,
     makeComparison
 )
-from . import *
+
+from colorama import Style, Fore
+from pathlib import Path
+import logging
 
 console_log = logging.getLogger("console")
 
@@ -149,11 +156,11 @@ def ask_mode_selection() -> MODE:
                 return MODE.following
 
 
-def output_comparison_results(record: comparisonResults) -> None:
+def output_comparison_results(record: ComparisonResults) -> None:
     """
     Outputs the result of a comparison to the terminal.
     Args:
-        record (comparisonResults): Result object from comparing records.
+        record (ComparisonResults): Result object from comparing records.
     """
     print("\n" + " Missing Users ".center(70, "=") + "\n")
     for user in record.removed:
