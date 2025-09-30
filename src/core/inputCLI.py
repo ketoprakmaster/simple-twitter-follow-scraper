@@ -7,7 +7,7 @@ from core.types import MODE, ComparisonResults
 from core.config import USER_RECORDS_DIR
 from core.userHandling import (
     compareRecentRecords,
-    process_new_scrape_results,
+    processScrapeResults,
     saveUsersRecord,
     readFromRecords,
     returnAllRecords,
@@ -64,7 +64,7 @@ def initialize_new_tracking_process():
     finally:
         scraper.quit()
     
-    results = process_new_scrape_results(username, mode, users)
+    results = processScrapeResults(username, mode, users)
     if results.added or results.removed:
         output_comparison_results(record=results)
     else:
@@ -179,3 +179,5 @@ def output_comparison_results(record: ComparisonResults) -> None:
         print(Fore.LIGHTCYAN_EX + "No users added." + Style.RESET_ALL)
     else:
         print(f"\nTotal added: {Fore.GREEN} {len(record.added)} {Style.RESET_ALL}")    
+    
+    pause()

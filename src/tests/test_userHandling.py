@@ -9,10 +9,11 @@ from core.userHandling import (
     makeComparison,
     readFromRecords,
     returnAllRecords,
-    compareToRecentUsersRecords
+    processScrapeResults
 )
-from core import MODE, comparisonResults
-from core import NotEnoughUserRecords, UserRecordsNotExists
+from core.types import ComparisonResults, MODE
+from core.exceptions import NotEnoughUserRecords
+from core.userHandling import makeComparison
 
 def test_saveUsersRecord_creates_file(tmp_path):
     username = "testuser"
@@ -87,17 +88,16 @@ def test_returnAllRecords_sorted(tmp_path):
     result = returnAllRecords(path=tmp_path)
     assert result == [f1, f3, f2]
 
-def test_compareToRecentUsersRecords_compare(tmp_path):
+def test_processScrapeResults_compare(tmp_path):
     users1 = set(["alice","bob"])
     users2 = set(["alice","bob","jared"])
     
     with patch("core.userHandling.USER_RECORDS_DIR", tmp_path):
-        results = compareToRecentUsersRecords(username="gary",mode=MODE.followers,users_set=users1)
-        assert results == comparisonResults()
+        results = processScrapeResults(username="gary",mode=MODE.followers,new_users=users1)
+        assert results.added == users1
         
-        saveUsersRecord(username="gary",mode=MODE.followers,users_set=users1)
-        results = compareToRecentUsersRecords(username="gary",mode=MODE.followers,users_set=users2)
+        results = processScrapeResults(username="gary",mode=MODE.followers,new_users=users2)
         assert results.added == {"jared"}
 
-        results = compareToRecentUsersRecords(username="gary",mode=MODE.followers,users_set=users1)
-        assert results == comparisonResults()
+        results = processScrapeResults(username="gary",mode=MODE.followers,new_users=users1)
+        assert results.removed == {"jared"}

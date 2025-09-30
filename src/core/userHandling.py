@@ -16,8 +16,8 @@ def readFromRecords(fullPath:Path) -> set[str]:
     try:
         with open(fullPath,"r") as obj:
             users = json.load(obj)["users"]
-    except json.JSONDecodeError:
-        userLog.error(f"failed to decode json path: {fullPath}")
+    except (json.JSONDecodeError, KeyError) as e:
+        userLog.error(f"failed to decode json path: {fullPath} error:{e}")
         raise FiledecodeError(f"failed to decode json path:{fullPath}")
     return set(users)
 
@@ -112,7 +112,7 @@ def compareRecentRecords(username: str, mode: MODE) -> ComparisonResults:
     
     return results
 
-def process_new_scrape_results(username: str, mode: MODE, new_users: set) -> ComparisonResults:
+def processScrapeResults(username: str, mode: MODE, new_users: set) -> ComparisonResults:
     """
     Compares a new set of users against the most recent record.
     Saves the new set if changes are detected.

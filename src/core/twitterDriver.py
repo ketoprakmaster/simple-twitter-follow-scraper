@@ -15,8 +15,8 @@ from core.config import USER_PROFILE_DIR, CURRENT_DIR, MAX_EMPTY_SCROLLS, SCRAPE
 from core.exceptions import UserRecordsNotExists, NotEnoughUserRecords, UserScrapeOperationFailed
 
 class TwitterSelectors:
-    ACCOUNT_MENU_BUTTON = "//button[@aria-label='Account menu']//*[@data-testid]"
-    USER_CELL = "//div[@data-testid='cellInnerDiv']"
+    ACCOUNT_MENU_BUTTON = "//a[@data-testid='AppTabBar_Profile_Link']"
+    USER_CELL = "//button[@data-testid='UserCell']/div/div[2]//a[@tabindex='-1']"
 
 class TwitterDriver:
     def __init__(self, headless: bool = False, mode: MODE = MODE.following):
@@ -78,7 +78,7 @@ class TwitterDriver:
         except TimeoutException:
             raise UserScrapeOperationFailed("Timeout: No user login detected. Log in to Twitter first.")
 
-        self.username = element.get_attribute("data-testid").split('-')[-1]
+        self.username = element.get_attribute("href").split('/')[-1]
         self.driver_log.info(f"User handle acquired: {self.username}")
         return self.username
 
@@ -150,9 +150,9 @@ class TwitterDriver:
 
         for el in user_elements:
             try:
-                lines = el.text.split("\n")
-                if len(lines) > 1:
-                    users.add(lines[1].lower())
+                lines = el.text
+                if "@" in lines:
+                    users.add(lines.lower())
             except StaleElementReferenceException:
                 continue
 
