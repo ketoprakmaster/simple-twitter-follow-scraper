@@ -1,8 +1,7 @@
 import os
 import time
+import logging
 from functools import wraps
-
-from core.loggingConfig import logging
 
 def clear():
     """Cross-platform CLI clearing."""

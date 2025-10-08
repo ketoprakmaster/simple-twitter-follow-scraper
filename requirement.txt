@@ -2,3 +2,4 @@ selenium
 undetected_chromedriver
 pyinstaller
 colorama
+dotenv

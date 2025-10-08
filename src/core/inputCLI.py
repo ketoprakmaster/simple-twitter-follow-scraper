@@ -69,8 +69,7 @@ def initialize_new_tracking_process():
         output_comparison_results(record=results)
     else:
         console_log.info("No user changes detected, skipping save.")
-    
-    pause()
+        pause()
 
 
 def quick_user_comparison():

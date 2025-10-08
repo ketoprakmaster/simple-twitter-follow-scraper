@@ -17,6 +17,8 @@ from core.exceptions import UserRecordsNotExists, NotEnoughUserRecords, UserScra
 class TwitterSelectors:
     ACCOUNT_MENU_BUTTON = "//a[@data-testid='AppTabBar_Profile_Link']"
     USER_CELL = "//button[@data-testid='UserCell']/div/div[2]//a[@tabindex='-1']"
+    FOLLOW_COUNT = "//a[contains(@href,'{mode}')]/span[1]"
+    USER_STATE = "//div[@data-testid='empty_state_header_text']/span"
 
 class TwitterDriver:
     def __init__(self, headless: bool = False, mode: MODE = MODE.following):
@@ -60,6 +62,7 @@ class TwitterDriver:
 
         self.driver = uc.Chrome(options=options)
 
+    @timing_decorator(msg="fetching user handles")
     def get_user_handle(self) -> str:
         """
         Fetches the logged-in Twitter username by accessing the homepage.
@@ -158,17 +161,16 @@ class TwitterDriver:
 
         return users
 
-    def check_user_follow(self, username: str = None) -> int:
+    def check_user_follow(self, username: str = None, option: MODE = MODE.following) -> int:
         """
-        Check the number of followers or following from a user's profile page.
+        Check the number of followers or following from a user's profile page.\n
         if username isn't provided it will check the current log in users instead
-
         Args:
-            href (str): URL path to the users profile section.
+            username (str, optional): path to the users profile section.. Defaults to None.
+            option (MODE): fetch the chosen user follows. Defaults to MODE.following.
 
         Returns:
             int: The numeric count of followers/following.
-
         NOTE: Currently unused and untested.
         """
         if not username:
@@ -176,12 +178,12 @@ class TwitterDriver:
         
         self.driver_log.info(f"start fetching {username} follows")
         self.driver.get(f"https://x.com/{username}")
-        time.sleep(5)
-        elem = self.driver.find_element(
-            By.XPATH,
-            f"//a[translate(@href,'ABCDEFGHIJKLMNOPQRSTUVWXYZ','abcdefghijklmnopqrstuvwxyz') = '/{username.lower()}']"
+        
+        elem = WebDriverWait(self.driver,SCRAPE_TIMEOUT).until(
+            EC.presence_of_element_located(By.XPATH, TwitterSelectors.FOLLOW_COUNT.format(mode=option))
         )
-        count = ''.join(c for c in elem.text if c.isdigit())
+
+        count = ''.join(char for char in elem.text if char.isdigit())
         return int(count)
 
     def get_proxy(self) -> str | None:

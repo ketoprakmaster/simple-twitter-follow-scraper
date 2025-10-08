@@ -1,13 +1,10 @@
+from core.config import logging
+
 print("application initialize...")
 
 from colorama import Fore, Style
-
-from core.loggingConfig import setup_logging
 from core.inputCLI import initialize_new_tracking_process, quick_user_comparison, manual_file_comparison, configure_browser_login
 from core.utils import clear
-
-# logging setup
-setup_logging()
 
 
 def main():  
