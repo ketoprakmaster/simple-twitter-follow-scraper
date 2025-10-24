@@ -13,12 +13,7 @@ from core.types import MODE
 from core.utils import timing_decorator
 from core.config import USER_PROFILE_DIR, CURRENT_DIR, MAX_EMPTY_SCROLLS, SCRAPE_TIMEOUT
 from core.exceptions import UserRecordsNotExists, NotEnoughUserRecords, UserScrapeOperationFailed
-
-class TwitterSelectors:
-    ACCOUNT_MENU_BUTTON = "//a[@data-testid='AppTabBar_Profile_Link']"
-    USER_CELL = "//button[@data-testid='UserCell']/div/div[2]//a[@tabindex='-1']"
-    FOLLOW_COUNT = "//a[contains(@href,'{mode}')]/span[1]"
-    USER_STATE = "//div[@data-testid='empty_state_header_text']/span"
+from core.selectors import TwitterSelectors
 
 class TwitterDriver:
     def __init__(self, headless: bool = False, mode: MODE = MODE.following):

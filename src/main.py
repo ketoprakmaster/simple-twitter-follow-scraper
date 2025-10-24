@@ -1,4 +1,6 @@
-from core.config import logging
+# configure the logger
+from core.loggingSetup import setup_logging
+setup_logging()
 
 print("application initialize...")
 
