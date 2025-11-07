@@ -11,4 +11,3 @@ else:
 USER_PROFILE_DIR = CURRENT_DIR / "profile"
 USER_RECORDS_DIR = CURRENT_DIR / "records"
 LOG_FILE_PATH = CURRENT_DIR / "logging.log"
-ENV_FILE_PATH = CURRENT_DIR / "config.env"

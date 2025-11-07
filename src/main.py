@@ -1,5 +1,5 @@
 # configure the logger
-from config.loggingSetup import setup_logging
+from config.setup import setup_logging
 setup_logging()
 
 print("application initialize...")

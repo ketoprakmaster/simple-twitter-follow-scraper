@@ -11,10 +11,10 @@ import time
 import random
 
 from config.paths import USER_PROFILE_DIR, CURRENT_DIR
+from config.vars import TwitterSelectors, SCRAPE_TIMEOUT, MAX_EMPTY_SCROLLS
 from common.types import MODE
 from common.decorators import timing_decorator
 from common.exceptions import UserScrapeOperationFailed
-from core.twitterConfig import TwitterSelectors, SCRAPE_TIMEOUT, MAX_EMPTY_SCROLLS
 
 class TwitterDriver:
     def __init__(self, headless: bool = False, mode: MODE = MODE.following):
