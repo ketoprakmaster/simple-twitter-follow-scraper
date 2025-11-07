@@ -3,7 +3,7 @@ class UserScrapeOperationFailed(Exception):
 
 class NotEnoughUserRecords(Exception):
     "ensure to have atleast two user follow records for comparison"
-    
+
 class FiledecodeError(Exception):
     "failed to decode json objects"
 

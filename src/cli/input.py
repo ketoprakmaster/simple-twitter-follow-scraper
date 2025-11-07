@@ -1,14 +1,13 @@
 from selenium.common.exceptions import WebDriverException
 
+from config.paths import USER_RECORDS_DIR
+from common.utils import pause, clear
+from common.exceptions import NotEnoughUserRecords, FiledecodeError, UserRecordsNotExists, UserScrapeOperationFailed
+from common.types import MODE, ComparisonResults
 from core.twitterDriver import TwitterDriver
-from core.utils import pause, clear
-from core.exceptions import NotEnoughUserRecords, FiledecodeError, UserRecordsNotExists, UserScrapeOperationFailed
-from core.types import MODE, ComparisonResults
-from core.config import USER_RECORDS_DIR
 from core.userHandling import (
     compareRecentRecords,
     processScrapeResults,
-    saveUsersRecord,
     readFromRecords,
     returnAllRecords,
     makeComparison
@@ -26,7 +25,7 @@ def file_selection(directory: Path, msg: str = "") -> Path:
     Lists files in a given directory and allows the user to select one.
     Returns the selected file path.
     """
-    files = returnAllRecords(path=directory)
+    files = returnAllRecords(user_path=directory)
     console_log.info(f"Total files: {len(files)}")
 
     while True:
@@ -63,7 +62,7 @@ def initialize_new_tracking_process():
         return
     finally:
         scraper.quit()
-    
+
     results = processScrapeResults(username, mode, users)
     if results.added or results.removed:
         output_comparison_results(record=results)
@@ -120,7 +119,7 @@ def configure_browser_login() -> None:
     Launches browser in non-headless mode for the user to log in manually.
     """
     driver = TwitterDriver(headless=False)
-    driver.initialize_driver()  
+    driver.initialize_driver()
     print(Fore.YELLOW + "Log in to Twitter in the opened browser.\nPress ENTER here once done..." + Style.RESET_ALL)
     pause()
     driver.quit()
@@ -177,6 +176,6 @@ def output_comparison_results(record: ComparisonResults) -> None:
     if not record.added:
         print(Fore.LIGHTCYAN_EX + "No users added." + Style.RESET_ALL)
     else:
-        print(f"\nTotal added: {Fore.GREEN} {len(record.added)} {Style.RESET_ALL}")    
-    
+        print(f"\nTotal added: {Fore.GREEN} {len(record.added)} {Style.RESET_ALL}")
+
     pause()

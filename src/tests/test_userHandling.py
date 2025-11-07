@@ -11,8 +11,8 @@ from core.userHandling import (
     returnAllRecords,
     processScrapeResults
 )
-from core.types import ComparisonResults, MODE
-from core.exceptions import NotEnoughUserRecords
+from common.types import ComparisonResults, MODE
+from common.exceptions import NotEnoughUserRecords
 from core.userHandling import makeComparison
 
 def test_saveUsersRecord_creates_file(tmp_path):
@@ -85,17 +85,17 @@ def test_returnAllRecords_sorted(tmp_path):
     f2.write_text("[]")
     f3.write_text("[]")
 
-    result = returnAllRecords(path=tmp_path)
+    result = returnAllRecords(user_path=tmp_path)
     assert result == [f1, f3, f2]
 
 def test_processScrapeResults_compare(tmp_path):
     users1 = set(["alice","bob"])
     users2 = set(["alice","bob","jared"])
-    
+
     with patch("core.userHandling.USER_RECORDS_DIR", tmp_path):
         results = processScrapeResults(username="gary",mode=MODE.followers,new_users=users1)
         assert results.added == users1
-        
+
         results = processScrapeResults(username="gary",mode=MODE.followers,new_users=users2)
         assert results.added == {"jared"}
 
