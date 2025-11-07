@@ -13,8 +13,11 @@ dependencies = [
     "undetected-chromedriver",
 ]
 
+[tool.uv.sources]
+undetected-chromedriver = { git = "https://github.com/ketoprakmaster/undetected-chromedriver" }
+
+[tool.pytest.ini_options]
+pythonpath = "src"
+
 [tool.pyright]
 typeCheckingMode = "basic"
-
-[tool.uv.sources]
-undetected-chromedriver = { git = "https://github.com/ultrafunkamsterdam/undetected-chromedriver/" }

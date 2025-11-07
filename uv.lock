@@ -178,7 +178,7 @@ requires-dist = [
     { name = "pytest", specifier = ">=8.4.2" },
     { name = "python-decouple", specifier = ">=3.8" },
     { name = "selenium", specifier = ">=4.38.0" },
-    { name = "undetected-chromedriver", git = "https://github.com/ultrafunkamsterdam/undetected-chromedriver/" },
+    { name = "undetected-chromedriver", git = "https://github.com/ketoprakmaster/undetected-chromedriver" },
 ]
 
 [[package]]
@@ -385,7 +385,7 @@ wheels = [
 [[package]]
 name = "undetected-chromedriver"
 version = "3.5.5"
-source = { git = "https://github.com/ultrafunkamsterdam/undetected-chromedriver/#757ed6a22052f0674bb7c9f765ca884d15dcb780" }
+source = { git = "https://github.com/ketoprakmaster/undetected-chromedriver#5feec905fa3b8b2b7a75dc25a515ef86102d26fc" }
 dependencies = [
     { name = "packaging" },
     { name = "requests" },

@@ -50,7 +50,7 @@ This Python application is designed to scrape Twitter (now X.com) to track chang
     Copy `config.env.template` to `.env` and configure any necessary environment variables, especially for Twitter selectors if they change.
 
     ```bash
-    cp config.env.template .env
+    cp .env.template .env
     ```
 
 ### Usage
@@ -69,8 +69,3 @@ The application will present a menu with the following options:
 4.  **Open browser to set up (recommended for first launch):** Launches a browser for manual Twitter login to establish a session.
 
 Follow the on-screen prompts to navigate through the options.
-
-
-## Contributing
-
-Contributions are welcome! Please feel free to submit pull requests or open issues for bugs and feature requests.
