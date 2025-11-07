@@ -1,0 +1,6 @@
+selenium
+undetected-chromedriver
+colorama
+python-dotenv
+python-decouple
+pytest
