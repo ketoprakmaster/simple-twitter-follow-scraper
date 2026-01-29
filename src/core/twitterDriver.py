@@ -11,7 +11,7 @@ import time
 import random
 
 from config.paths import USER_PROFILE_DIR, CURRENT_DIR
-from config.vars import TwitterSelectors, SCRAPE_TIMEOUT, MAX_EMPTY_SCROLLS
+from config.vars import CHROME_TARGET_VERSION, TwitterSelectors, SCRAPE_TIMEOUT, MAX_EMPTY_SCROLLS
 from common.types import MODE
 from common.decorators import timing_decorator
 from common.exceptions import UserScrapeOperationFailed
@@ -57,7 +57,7 @@ class TwitterDriver:
             options.add_argument("--headless")
             options.add_argument("--headless=new")
 
-        self.driver = uc.Chrome(options=options) # pyright: ignore
+        self.driver = uc.Chrome(options=options, version_main=CHROME_TARGET_VERSION) # pyright: ignore
 
     @timing_decorator(msg="fetching user handles")
     def get_user_handle(self) -> str:

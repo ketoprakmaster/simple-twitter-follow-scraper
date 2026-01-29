@@ -14,11 +14,12 @@ env_config = AutoConfig(search_path=CURRENT_DIR)
 try:
     SCRAPE_TIMEOUT = env_config("SCRAPE_TIMEOUT", cast=int, default=10)
     MAX_EMPTY_SCROLLS = env_config("MAX_EMPTY_SCROLLS", cast=int, default=30)
-except (ValueError, NameError):
-    config_log.error(f"""failed to load env variables!
-        {env_config('MAX_EMPTY_SCROLLS', default=10)=}, {env_config('SCRAPE_TIMEOUT', default=30)}""")
-    sys.exit(1)
 
+    # target versions
+    CHROME_TARGET_VERSION = env_config("CHROME_TARGET_VERSION", default=None, cast=lambda v: int(v) if v else None)
+except (ValueError, NameError) as e:
+    config_log.error(f"""failed to load env variables! \n{e}""")
+    sys.exit(1)
 
 config_log.info(f"loaded variable {SCRAPE_TIMEOUT=}, {MAX_EMPTY_SCROLLS=}")
 
