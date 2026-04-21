@@ -6,15 +6,12 @@ readme = "README.md"
 requires-python = ">=3.14"
 dependencies = [
     "colorama>=0.4.6",
+    "nodriver>=0.48.1",
     "pyinstaller>=6.16.0",
     "pytest>=8.4.2",
     "python-decouple>=3.8",
     "selenium>=4.38.0",
-    "undetected-chromedriver",
 ]
-
-[tool.uv.sources]
-undetected-chromedriver = { git = "https://github.com/ketoprakmaster/undetected-chromedriver" }
 
 [tool.pytest.ini_options]
 pythonpath = "src"

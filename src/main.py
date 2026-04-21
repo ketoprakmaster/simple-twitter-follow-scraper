@@ -12,9 +12,11 @@ from cli.input import (
     configure_browser_login,
 )
 from common.utils import clear
+import asyncio
+import inspect
 
 
-def main():
+async def main():
     while True:
         clear()
 
@@ -41,7 +43,11 @@ def main():
         if choice in options:
             try:
                 clear()
-                options[choice]()
+                func = options[choice]
+                if inspect.iscoroutinefunction(func):
+                    await func()
+                else:
+                    func()
             except KeyboardInterrupt:
                 pass
         elif "x" in choice:
@@ -49,4 +55,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    asyncio.run(main())

@@ -9,3 +9,6 @@ class FiledecodeError(Exception):
 
 class UserRecordsNotExists(Exception):
     "no users records exist"
+
+class DriverNotInitialized(Exception):
+    "Driver hasn't been initialized"

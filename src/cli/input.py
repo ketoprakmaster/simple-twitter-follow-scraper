@@ -42,7 +42,7 @@ def file_selection(directory: Path, msg: str = "") -> Path:
             continue
 
 
-def initialize_new_tracking_process():
+async def initialize_new_tracking_process():
     """
     Starts a new Twitter scraping session, saves the user records,
     and compares against previous records.
@@ -52,8 +52,8 @@ def initialize_new_tracking_process():
 
     try:
         scraper = TwitterDriver(headless=headless, mode=mode)
-        scraper.initialize_driver()
-        users = scraper.scrape_user_follows()
+        await scraper.initialize_driver()
+        users = await scraper.scrape_user_follows()
         username = scraper.username
     except (WebDriverException, UserScrapeOperationFailed) as e:
         console_log.error(f"A problem occurred during scraping: {e}")
@@ -114,12 +114,12 @@ def manual_file_comparison():
     output_comparison_results(results)
 
 
-def configure_browser_login() -> None:
+async def configure_browser_login() -> None:
     """
     Launches browser in non-headless mode for the user to log in manually.
     """
     driver = TwitterDriver(headless=False)
-    driver.initialize_driver()
+    await driver.initialize_driver()
     print(Fore.YELLOW + "Log in to Twitter in the opened browser.\nPress ENTER here once done..." + Style.RESET_ALL)
     pause()
     driver.quit()
