@@ -44,6 +44,7 @@ class TwitterDriver:
         self.driver_log.info("Initializing new driver")
         config.user_data_dir = USER_PROFILE_DIR
         config.headless = self.headless
+        config.sandbox = False
 
         proxy = self.get_proxy()
         if proxy:
