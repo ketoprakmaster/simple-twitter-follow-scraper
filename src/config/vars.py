@@ -21,7 +21,7 @@ class TwitterSelectors:
     # Default selector for the profile link/button
     ACCOUNT_MENU_BUTTON : str = env_config(
         "SELECTOR_ACCOUNT_MENU", cast=str,
-        default="a[aria-label='profile' i"
+        default="a[aria-label='profile' i]"
     )
 
     # Default selector for the user cell in a followers/following list
@@ -39,21 +39,19 @@ class TwitterSelectors:
 try:
     # How much scroll by how much: 50 = half of page, 100 = a whole page, 200 = twice the page height etc
     SCROLL_AMOUNT: int = env_config(
-        "SCROLL_AMOUNT", cast=int, default=300
+        "SCROLL_AMOUNT", cast=int, default=250
     )
 
-    #
+    # Scraping Timeouts (defaults: 5 seconds)
     SCRAPE_TIMEOUT : int = env_config(
-        "SCRAPE_TIMEOUT", cast=int, default=10
+        "SCRAPE_TIMEOUT", cast=int, default=5
     )
 
+    # determine the end of scraping by how many consecutive scrolls that were empty (default: 10)
     MAX_EMPTY_SCROLLS : int = env_config(
-        "MAX_EMPTY_SCROLLS", cast=int, default=30
+        "MAX_EMPTY_SCROLLS", cast=int, default=10
     )
 
 except (ValueError, NameError) as e:
     config_log.error(f"""failed to load env variables! \n{e}""")
     sys.exit(1)
-
-config_log.info(f"""loaded twitterSelectors
-    {TwitterSelectors.ACCOUNT_MENU_BUTTON=}\n {TwitterSelectors.USER_CELL=}\n {TwitterSelectors.FOLLOW_COUNT=}""")
