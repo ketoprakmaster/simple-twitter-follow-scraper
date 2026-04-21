@@ -14,7 +14,7 @@ from common.exceptions import DriverNotInitialized, UserScrapeOperationFailed
 class TwitterDriver:
     def __init__(self, headless: bool = False, mode: MODE = MODE.following):
         """
-        TwitterDriver handles scraping Twitter user follows via Selenium automation.
+        TwitterDriver handles scraping Twitter user follows via Nodriver automation.
 
         Args:
             headless (bool): Whether to run the browser in headless mode.
@@ -31,7 +31,7 @@ class TwitterDriver:
     @timing_decorator(msg="initializing drivers")
     async def initialize_driver(self) -> None:
         """
-        Initializes the Selenium Chrome driver with undetected-chromedriver.
+        Initializes the a Chrome Instance through nodriver.start.
         Loads user profile and proxy if available.
         """
         config = uc.Config()
@@ -205,7 +205,7 @@ class TwitterDriver:
         return random.choice(proxies)
 
     def quit(self) -> None:
-        """close the selenium browser if it had already exists"""
+        """close the browser if it had already exists"""
         if hasattr(self, "driver"):
             self.driver_log.info("closing the browser")
             self.driver.stop() # not an async function no need to be awaited

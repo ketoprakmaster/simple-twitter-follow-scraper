@@ -1,8 +1,6 @@
-from selenium.common.exceptions import WebDriverException
-
 from config.paths import USER_RECORDS_DIR
 from common.utils import pause, clear, safe_input
-from common.exceptions import NotEnoughUserRecords, FiledecodeError, UserRecordsNotExists, UserScrapeOperationFailed
+from common.exceptions import DriverNotInitialized, NotEnoughUserRecords, FiledecodeError, UserRecordsNotExists, UserScrapeOperationFailed
 from common.types import MODE, ComparisonResults
 from core.twitterDriver import TwitterDriver
 from core.userHandling import (
@@ -55,7 +53,7 @@ async def initialize_new_tracking_process():
         await scraper.initialize_driver()
         users = await scraper.scrape_user_follows()
         username = scraper.username
-    except (WebDriverException, UserScrapeOperationFailed) as e:
+    except (UserScrapeOperationFailed, DriverNotInitialized) as e:
         console_log.error(f"A problem occurred during scraping:\n{e}")
         pause()
         return

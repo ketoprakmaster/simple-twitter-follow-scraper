@@ -10,7 +10,6 @@ dependencies = [
     "pyinstaller>=6.16.0",
     "pytest>=8.4.2",
     "python-decouple>=3.8",
-    "selenium>=4.38.0",
 ]
 
 [tool.pytest.ini_options]
