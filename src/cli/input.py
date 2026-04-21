@@ -1,7 +1,7 @@
 from selenium.common.exceptions import WebDriverException
 
 from config.paths import USER_RECORDS_DIR
-from common.utils import pause, clear
+from common.utils import pause, clear, safe_input
 from common.exceptions import NotEnoughUserRecords, FiledecodeError, UserRecordsNotExists, UserScrapeOperationFailed
 from common.types import MODE, ComparisonResults
 from core.twitterDriver import TwitterDriver
@@ -56,12 +56,16 @@ async def initialize_new_tracking_process():
         users = await scraper.scrape_user_follows()
         username = scraper.username
     except (WebDriverException, UserScrapeOperationFailed) as e:
-        console_log.error(f"A problem occurred during scraping: {e}")
-        console_log.info("This could be due to a poor internet connection, or if Twitter has blocked the request.")
+        console_log.error(f"A problem occurred during scraping:\n{e}")
+        pause()
+        return
+    except Exception as e:
+        console_log.error(f"an Error occured on initialize_new_tracking_process()\n{e}")
         pause()
         return
     finally:
-        scraper.quit()
+        if locals().get("scraper"):
+            scraper.quit()
 
     results = processScrapeResults(username, mode, users)
     if results.added or results.removed:
@@ -118,11 +122,18 @@ async def configure_browser_login() -> None:
     """
     Launches browser in non-headless mode for the user to log in manually.
     """
-    driver = TwitterDriver(headless=False)
-    await driver.initialize_driver()
-    print(Fore.YELLOW + "Log in to Twitter in the opened browser.\nPress ENTER here once done..." + Style.RESET_ALL)
-    pause()
-    driver.quit()
+    try:
+        driver = TwitterDriver(headless=False)
+        await driver.initialize_driver()
+        print(Fore.YELLOW + "Log in to Twitter in the opened browser.\nPress ENTER here once done..." + Style.RESET_ALL)
+        pause()
+    except Exception as e:
+        console_log.error(f"an Error occured on initialize_new_tracking_process()\n{e}")
+        pause()
+        return
+    finally:
+        if locals().get('driver'):
+            driver.quit()
 
 
 def ask_headless_mode() -> bool:
@@ -133,7 +144,7 @@ def ask_headless_mode() -> bool:
     """
     while True:
         clear()
-        choice = input("Run browser in headless mode? [Y/n] (default: Y): ").lower()
+        choice = safe_input("Run browser in headless mode? [Y/n] (default: Y): ").lower()
         if choice == "n":
             return False
         elif choice in ("y", ""):
@@ -148,7 +159,7 @@ def ask_mode_selection() -> MODE:
     """
     while True:
         clear()
-        choice = input("Which follow you want to operate?\n[1] Following (default)\n[2] Followers\n> ").lower()
+        choice = safe_input("Which follow you want to operate?\n[1] Following (default)\n[2] Followers\n> ").lower()
         match choice:
             case "2" | "followers":
                 return MODE.followers

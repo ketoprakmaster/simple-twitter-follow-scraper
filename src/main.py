@@ -11,12 +11,13 @@ from cli.input import (
     manual_file_comparison,
     configure_browser_login,
 )
-from common.utils import clear
+from common.utils import clear, pause
 import asyncio
 import inspect
+import sys
 
 
-async def main():
+def main():
     while True:
         clear()
 
@@ -39,20 +40,30 @@ async def main():
             "v": configure_browser_login,
         }
 
-        choice = input("\n\n:").lower()
+        try:
+            choice = input("\n\n:").lower().strip()
+        except (KeyboardInterrupt, EOFError):
+            print(f"\n{Fore.RED}Exiting...{Style.RESET_ALL}")
+            break
+
+        if choice == "x":
+            break
+
         if choice in options:
+            clear()
+            func = options[choice]
+
             try:
-                clear()
-                func = options[choice]
                 if inspect.iscoroutinefunction(func):
-                    await func()
+                    asyncio.run(func())
                 else:
                     func()
             except KeyboardInterrupt:
-                pass
-        elif "x" in choice:
-            break
+                continue
+            except Exception as e:
+                print(f"An unexpected error occurred: {e}")
+                pause()
 
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    main()

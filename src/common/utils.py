@@ -9,4 +9,13 @@ def clear():
 
 def pause(msg: str = "\nPress Enter to continue..."):
     """Pauses until any key is pressed."""
-    input(msg)
+    safe_input(msg)
+
+def safe_input(prompt: str = "") -> str:
+    """Helper func for handling KeyboardInterrupt inside of asnyc"""
+    try:
+        return input(prompt)
+    except (KeyboardInterrupt, EOFError):
+        # raise KeyboardInterrupt specifically so the
+        # parent 'try/except' blocks can catch it consistently.
+        raise KeyboardInterrupt
