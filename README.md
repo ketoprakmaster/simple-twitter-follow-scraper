@@ -1,6 +1,6 @@
 # Twitter Follow Scraper
 
-This Python application is designed to scrape Twitter (now X.com) to track changes in a user's "following" or "followers" lists. It leverages Selenium with `undetected_chromedriver` to interact with the Twitter website, allowing for the comparison of historical records to identify new follows or unfollows.
+This Python application is designed to scrape Twitter (now X.com) to track changes in a user's "following" or "followers" lists. It leverages `nodriver` for browser automation, allowing for the comparison of historical records to identify new follows or unfollows.
 
 ## Features
 
@@ -17,8 +17,7 @@ This Python application is designed to scrape Twitter (now X.com) to track chang
 ## Technologies Used
 
 *   **Python:** The core programming language.
-*   **Selenium:** For browser automation and interaction with Twitter.
-*   **`undetected_chromedriver`:** A patched ChromeDriver that avoids detection by websites like Twitter.
+*   **nodriver:** For asynchronous browser automation and interaction with Twitter.
 *   **`colorama`:** For enhancing CLI output with colors.
 *   **`python-decouple`:** For managing environment variables and configuration.
 *   **`pathlib`:** For object-oriented filesystem paths.
@@ -47,7 +46,7 @@ This Python application is designed to scrape Twitter (now X.com) to track chang
     ```
 
 3.  **Configure Environment Variables:**
-    Copy `config.env.template` to `.env` and configure any necessary environment variables, especially for Twitter selectors if they change.
+    Copy `.env.template` to `.env` and configure any necessary environment variables, especially for Twitter selectors if they change.
 
     ```bash
     cp .env.template .env
@@ -58,7 +57,7 @@ This Python application is designed to scrape Twitter (now X.com) to track chang
 Run the main application:
 
 ```bash
-python src/main.py
+uv run src/main.py
 ```
 
 The application will present a menu with the following options:
