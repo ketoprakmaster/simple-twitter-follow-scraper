@@ -12,13 +12,19 @@ from common.decorators import timing_decorator
 from common.exceptions import DriverNotInitialized, UserScrapeOperationFailed
 
 class TwitterDriver:
+    """
+    A driver class to handle Twitter scraping using nodriver.
+
+    This class manages the browser lifecycle, handles navigation to Twitter,
+    and implements the logic to scrape users from the 'following' or 'followers' lists.
+    """
     def __init__(self, headless: bool = False, mode: MODE = MODE.following):
         """
-        TwitterDriver handles scraping Twitter user follows via Nodriver automation.
+        Initializes the TwitterDriver.
 
         Args:
-            headless (bool): Whether to run the browser in headless mode.
-            mode (MODE): Mode of scraping, either 'following' or 'followers'.
+            headless (bool): Whether to run the browser in headless mode. Defaults to False.
+            mode (MODE): The scraping mode, either MODE.following or MODE.followers. Defaults to MODE.following.
         """
         self.username: str
         self.driver : uc.Browser
@@ -31,8 +37,10 @@ class TwitterDriver:
     @timing_decorator(msg="initializing drivers")
     async def initialize_driver(self) -> None:
         """
-        Initializes the a Chrome Instance through nodriver.start.
-        Loads user profile and proxy if available.
+        Initializes a Chrome instance via nodriver.
+
+        Configures the browser with the user data directory for session persistence
+        and optionally sets up a proxy if available in 'proxy_list.txt'.
         """
         config = uc.Config()
 
@@ -55,8 +63,15 @@ class TwitterDriver:
     @timing_decorator(msg="fetching user handles")
     async def get_user_handle(self) -> str:
         """
-        Fetches the logged-in Twitter username by accessing the homepage.
-        Sets `self.username` if successful.
+        Identifies the currently logged-in Twitter user.
+
+        Navigates to the home page and looks for the profile menu button to extract the handle.
+
+        Returns:
+            str: The extracted Twitter username.
+
+        Raises:
+            UserScrapeOperationFailed: If no user login is detected.
         """
         if hasattr(self, "username"):
             self.driver_log.info(f"Username already acquired: {self.username}")
@@ -77,8 +92,13 @@ class TwitterDriver:
 
     async def scroll_down(self, page: uc.Tab) -> None:
         """
-        Scrolls down the webpage by twice the window height.
-        Helps in lazy-loading Twitter follow elements.
+        Scrolls the page down to trigger lazy-loading of content.
+
+        Args:
+            page (uc.Tab): The current browser tab to scroll.
+
+        Raises:
+            DriverNotInitialized: If the driver has not been initialized.
         """
         if not self.driver or not page:
             raise DriverNotInitialized("Initialize Driver first")
@@ -88,14 +108,16 @@ class TwitterDriver:
     @timing_decorator(msg="scraping users")
     async def scrape_user_follows(self) -> set[str]:
         """
-        Scrapes the users that the logged-in account is following (or its followers).
-        Automatically scrolls and accumulates all visible users.
+        Scrapes the following or followers list of the logged-in user.
+
+        The method navigates to the relevant profile page, iteratively scrolls down,
+        and collects unique user handles until no new users are found for a set number of scrolls.
 
         Returns:
-            Set[str]: A set of Twitter handles scraped.
+            set[str]: A set of lowercased Twitter handles scraped.
 
         Raises:
-            UserScrapeOperationFailed: If no users are scraped.
+            UserScrapeOperationFailed: If no users could be scraped.
         """
         empty_scrolls = 0
 
@@ -123,8 +145,11 @@ class TwitterDriver:
         return self._users_list
 
     def _update_users_list(self, new_users: set[str]) -> bool:
-            """Custom method to update the list AND print the side effect.
-            returns a bool (true) if users has changes/added
+            """
+            Updates the internal user set with newly discovered handles.
+
+            Returns:
+                bool: True if any new users were added, False otherwise.
             """
             diff = new_users - self._users_list
 
@@ -137,13 +162,13 @@ class TwitterDriver:
 
     async def _scrape_users_on_page(self, page: uc.Tab) -> set[str]:
         """
-        Helper method to extract visible Twitter handles from the current page.
+        Extracts visible user handles from the current page content.
+
+        Args:
+            page (uc.Tab): The browser tab to scrape.
 
         Returns:
-            Set[str]: A set of lowercased Twitter handles.
-
-        Raises:
-            NoSuchElementException: If no expected elements are found.
+            set[str]: A set of discovered lowercased Twitter handles.
         """
         await page.sleep(.5)
         users = set()
@@ -163,11 +188,11 @@ class TwitterDriver:
 
     async def check_user_follow(self, username: str | None = None, option: MODE = MODE.following) -> int:
         """
-        Check the number of followers or following from a user's profile page.\n
-        if username isn't provided it will check the current log in users instead
+        Retrieves the count of followers or following for a specified user.
+
         Args:
-            username (str, optional): path to the users profile section.. Defaults to None.
-            option (MODE): fetch the chosen user follows. Defaults to MODE.following.
+            username (str, optional): The Twitter handle to check. If None, checks the logged-in user.
+            option (MODE): Whether to fetch followers or following. Defaults to MODE.following.
 
         Returns:
             int: The numeric count of followers/following.
@@ -185,10 +210,17 @@ class TwitterDriver:
         return int(count)
 
     async def ensure_page_load(self, page: uc.Tab, attempt: int = 5, selector: str = "span") -> None:
-        """Helper functions to ensure twitter page is properly loaded using Tab.wait_for
+        """
+        Ensures a page is fully loaded by waiting for a specific element to appear.
 
-        if not try until n many attempts"""
+        Args:
+            page (uc.Tab): The browser tab to monitor.
+            attempt (int): Number of retry attempts. Defaults to 5.
+            selector (str): The CSS selector to wait for. Defaults to "span".
 
+        Raises:
+            UserScrapeOperationFailed: If the element does not appear within the given attempts.
+        """
         while attempt:
             try:
                 await page.wait_for(selector=selector,timeout=20)
@@ -201,12 +233,11 @@ class TwitterDriver:
 
 
     def get_proxy(self) -> str | None:
-        """Retrieves a proxy from 'proxy_list.txt' if available.
+        """
+        Attempts to retrieve a random proxy from 'proxy_list.txt'.
 
         Returns:
-            (str, None): A proxy address, or None if unavailable or file is malformed.
-
-        NOTE: Currently unused and untested.
+            str | None: A proxy address if the file exists and is not empty, otherwise None.
         """
         proxy_file_path = CURRENT_DIR / "proxy_list.txt"
         if not proxy_file_path.exists():
@@ -223,7 +254,9 @@ class TwitterDriver:
         return random.choice(proxies)
 
     def quit(self) -> None:
-        """close the browser if it had already exists"""
+        """
+        Gracefully shuts down the browser driver if it is active.
+        """
         if hasattr(self, "driver"):
             self.driver_log.info("closing the browser")
             self.driver.stop() # not an async function no need to be awaited
