@@ -64,10 +64,11 @@ class TwitterDriver:
 
         self.driver_log.info("Getting user handle")
         tab = await self.driver.get("https://x.com/home")
+        await self.ensure_page_load(page=tab, selector=TwitterSelectors.ACCOUNT_MENU_BUTTON)
         element = await tab.select(TwitterSelectors.ACCOUNT_MENU_BUTTON, float(SCRAPE_TIMEOUT))
 
         if not element:
-            raise UserScrapeOperationFailed("Timeout: No user login detected. Log in to Twitter first.")
+            raise UserScrapeOperationFailed("get_user_handle(): No user login detected. Log in to Twitter first.")
 
         # TODO: replace with a dedicated REGEX func
         self.username = str(element.attrs.get('href')).replace("/","").lower()
@@ -96,12 +97,13 @@ class TwitterDriver:
         Raises:
             UserScrapeOperationFailed: If no users are scraped.
         """
+        empty_scrolls = 0
+
         await self.get_user_handle()
         self.driver_log.info(f"Scraping {self.username} [{self.mode}]")
 
         page = await self.driver.get(f"https://x.com/{self.username}/{self.mode}")
-        await page.sleep(1) # wait for the page to be fully loaded
-        empty_scrolls = 0
+        await self.ensure_page_load(page=page, selector="[data-testid='usercell' i]")
 
         while empty_scrolls <= MAX_EMPTY_SCROLLS:
             new_users = await self._scrape_users_on_page(page)
@@ -115,7 +117,7 @@ class TwitterDriver:
             await self.scroll_down(page)
 
         if not self._users_list:
-            raise UserScrapeOperationFailed("No users were scraped.")
+            raise UserScrapeOperationFailed("scrape_user_follows(): No users were scraped.")
 
         self.driver_log.info(f"Total users scraped: {len(self._users_list)}")
         return self._users_list
@@ -143,7 +145,7 @@ class TwitterDriver:
         Raises:
             NoSuchElementException: If no expected elements are found.
         """
-        await asyncio.sleep(0.2)
+        await page.sleep(.5)
         users = set()
         user_elements = await page.select_all(TwitterSelectors.USER_CELL, SCRAPE_TIMEOUT)
 
@@ -181,6 +183,22 @@ class TwitterDriver:
         # TODO: make a dedicated func for int input sanitation
         count = ''.join(char for char in elem.text if char.isdigit())
         return int(count)
+
+    async def ensure_page_load(self, page: uc.Tab, attempt: int = 5, selector: str = "span") -> None:
+        """Helper functions to ensure twitter page is properly loaded using Tab.wait_for
+
+        if not try until n many attempts"""
+
+        while attempt:
+            try:
+                await page.wait_for(selector=selector,timeout=20)
+                return
+            except uc.ProtocolException as e:
+                attempt -= 1
+                self.driver_log.warning(f"ProtocolException: page not fully loaded, try again ({attempt=})")
+
+        raise UserScrapeOperationFailed(f"ensure_page_load(): failed to load page: {page.target.url}")
+
 
     def get_proxy(self) -> str | None:
         """Retrieves a proxy from 'proxy_list.txt' if available.
