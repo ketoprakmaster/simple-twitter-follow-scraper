@@ -7,7 +7,7 @@ import nodriver as uc
 
 from config.paths import USER_PROFILE_DIR, CURRENT_DIR
 from config.vars import SCROLL_AMOUNT, TwitterSelectors, SCRAPE_TIMEOUT, MAX_EMPTY_SCROLLS
-from common.types import MODE
+from common.types import MODE, UserStatus
 from common.decorators import timing_decorator
 from common.exceptions import DriverNotInitialized, UserScrapeOperationFailed
 
@@ -252,6 +252,25 @@ class TwitterDriver:
             return None
 
         return random.choice(proxies)
+
+    async def check_user_status(self, username: str) -> UserStatus:
+        """
+        Checks if a user exists, is banned, or is missing.
+        """
+        page = await self.driver.get(f"https://x.com/{username}")
+        await self.ensure_page_load(page)
+
+        # Look for the empty state div
+        empty_state = await page.select("div[data-testid='emptystate' i]", float(SCRAPE_TIMEOUT))
+
+        if not empty_state:
+            return UserStatus.EXISTS
+
+        text = empty_state.text.lower()
+        if "suspended" in text:
+            return UserStatus.BANNED
+
+        return UserStatus.MISSING
 
     def quit(self) -> None:
         """
