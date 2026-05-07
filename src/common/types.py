@@ -7,9 +7,11 @@ class MODE(StrEnum):
     followers = "followers"
 
 class UserStatus(StrEnum):
-    MISSING = "Missing"
-    BANNED = "Banned"
-    EXISTS = "Exists"
+    EXISTS      = "Exists"
+    BANNED      = "Banned"
+    DEACTIVATED = "Deactivated"
+    WITHHELD    = "Withheld"
+    MISSING     = "Missing"
 
 @dataclass(frozen=True)
 class UserRecords:

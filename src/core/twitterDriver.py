@@ -255,20 +255,37 @@ class TwitterDriver:
 
     async def check_user_status(self, username: str) -> UserStatus:
         """
-        Checks if a user exists, is banned, or is missing.
+        Detailed check for user status using keyword mapping from the empty state div.
         """
+        self.driver_log.info(f"{Fore.LIGHTYELLOW_EX}verifying {username} user state..")
         page = await self.driver.get(f"https://x.com/{username}")
-        await self.ensure_page_load(page)
 
-        # Look for the empty state div
-        empty_state = await page.select("div[data-testid='emptystate' i]", float(SCRAPE_TIMEOUT))
+        try:
+            await self.ensure_page_load(page, selector="[data-testid='UserName' i], [data-testid='emptyState' i]")
+        except UserScrapeOperationFailed:
+            return UserStatus.MISSING
 
-        if not empty_state:
+        profile_exists = await page.select("[data-testid='UserName' i]", timeout=2)
+        if profile_exists:
             return UserStatus.EXISTS
 
+        empty_state = await page.select("div[data-testid='emptyState' i]", float(SCRAPE_TIMEOUT))
+        if not empty_state:
+            return UserStatus.MISSING
+
         text = empty_state.text.lower()
-        if "suspended" in text:
-            return UserStatus.BANNED
+
+        # Keyword Mapping Logic
+        status_map = {
+            "suspended": UserStatus.BANNED,
+            "exist": UserStatus.DEACTIVATED,
+            "withheld": UserStatus.WITHHELD,
+            "terminated": UserStatus.BANNED
+        }
+
+        for keyword, status in status_map.items():
+            if keyword in text:
+                return status
 
         return UserStatus.MISSING
 

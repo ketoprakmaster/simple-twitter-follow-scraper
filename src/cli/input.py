@@ -7,7 +7,7 @@ from common.exceptions import (
     UserRecordsNotExists,
     UserScrapeOperationFailed
 )
-from common.types import MODE, ComparisonResults
+from common.types import MODE, ComparisonResults, UserStatus
 from core.twitterDriver import TwitterDriver
 from core.userHandling import UserSnapshot
 
@@ -16,7 +16,7 @@ from pathlib import Path
 import logging
 
 console_log = logging.getLogger("console")
-
+valid_statuses = {UserStatus.EXISTS, UserStatus.WITHHELD}
 
 def file_selection(directory: Path, msg: str = "") -> Path:
     """
@@ -77,7 +77,11 @@ async def initialize_new_tracking_process():
                 await results.check_status(driver=scraper)
 
                 # --- RECONCILIATION LOGIC ---
-                false_negatives = results.get_false_negatives()
+                false_negatives = {
+                    user for user, status in results.removed.items()
+                    if status in valid_statuses
+                }
+
                 if false_negatives:
                     # 1. Add them back to the snapshot set so the saved file is accurate
                     current_snap.users.update(false_negatives)
