@@ -73,8 +73,18 @@ async def initialize_new_tracking_process():
         # 3. Handle Investigation & Output
         if results.added or results.removed:
             if results.removed:
-                print(f"\n{Fore.YELLOW}Investigating {len(results.removed)} missing users...{Style.RESET_ALL}")
+                print(f"\n{Fore.YELLOW}Verifying {len(results.removed)} missing users...{Style.RESET_ALL}")
                 await results.check_status(driver=scraper)
+
+                # --- RECONCILIATION LOGIC ---
+                false_negatives = results.get_false_negatives()
+                if false_negatives:
+                    # 1. Add them back to the snapshot set so the saved file is accurate
+                    current_snap.users.update(false_negatives)
+
+                    # 2. Clean up the results dict so they don't clutter the CLI output
+                    for user in false_negatives:
+                        del results.removed[user]
 
             current_snap.save()
             output_comparison_results(record=results)
