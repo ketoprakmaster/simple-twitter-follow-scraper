@@ -33,7 +33,7 @@ class UserSnapshot:
         return cls(username, mode, users, timestamp=latest_path.stem)
 
     @timing_decorator("saving users records")
-    def save(self):
+    def save(self) -> None:
         """Saves the current instance's user set to disk."""
         file_path = USER_RECORDS_DIR / self.username / self.mode
         file_path.mkdir(parents=True, exist_ok=True)
@@ -56,7 +56,7 @@ class UserSnapshot:
         added = {u for u in self.users if u not in other.users}
         return ComparisonResults(removed=removed, added=added)
 
-    def _return_all_stored_records(self, user_path: Path | None = None):
+    def _return_all_stored_records(self, user_path: Path | None = None) -> list[Path]:
         """either give a user path whole or use predefined object class var, it will return a list of user records with an full path to each.
         Raises an exception if the specified directory of folders/file does not exist"""
         if not user_path:
@@ -78,7 +78,7 @@ class UserSnapshot:
 
         return allRecords
 
-    def _read_from_single_records(self, fullPath: Path):
+    def _read_from_single_records(self, fullPath: Path) -> set[str]:
         """input the full path of an user record in order to read it successfully, returns a set"""
         try:
             with open(fullPath,"r") as obj:
