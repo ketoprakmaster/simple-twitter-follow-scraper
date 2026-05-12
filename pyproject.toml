@@ -18,3 +18,8 @@ pythonpath = "src"
 
 [tool.pyright]
 typeCheckingMode = "basic"
+
+[dependency-groups]
+dev = [
+    "textual-dev>=1.8.0",
+]

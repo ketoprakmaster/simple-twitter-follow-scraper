@@ -1,12 +1,32 @@
-Button {
-    margin: 1;
+Center {
+    margin: 2;
+    padding: 2;
+    content-align: center middle;
+}
+
+Center * {
+    max-width: 100;
     width: 100%;
 }
 
-Vertical {
-    margin: 2;
+Center Label {
+    margin-bottom: 1;
 }
 
-Label {
-    padding: 2;
+#input-grid {
+    grid-size: 2;
+    grid-columns: 1fr 2fr;
+    width: 100;
+    height: auto;
+}
+
+#input-grid Label {
+    height: 3;
+    margin-right: 2;
+}
+
+Button {
+    margin-top: 1;
+    max-width: 100;
+    width: 100%;
 }

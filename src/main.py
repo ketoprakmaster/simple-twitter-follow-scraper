@@ -1,22 +1,26 @@
 from textual.app import App, ComposeResult
-from textual.containers import Vertical
-from textual.screen import Screen
+from textual.containers import Center
 from textual.widgets import Button, Footer, Header
 
-from ui.scraper import ScraperConfigScreen
-from ui.compare import QuickCompareScreen, ManualCompareScreen
-from ui.login import BrowserLoginScreen
+from ui.compareManual import ManualCompareScreen
+from ui.compareQuick import QuickCompareScreen
+from ui.scraperLogin import BrowserLoginScreen
+from ui.scraperTask import ScraperConfigScreen
 from config.setup import setup_logging
 
 class TwitterScraperApp(App):
     CSS_PATH = 'styles.tcss'
+    BINDINGS = [
+        ("d", "toggle_dark", "Toggle dark mode"),
+        ("q", "back", "Go Back")
+    ]
 
     def on_mount(self) -> None:
         setup_logging(self)
 
     def compose(self) -> ComposeResult:
         yield Header()
-        yield Vertical(
+        yield Center(
             Button(label="Start scraping", id="task-scrape", variant="primary"),
             Button(label="Quick Comparison", id="task-quick-compare", variant="warning"),
             Button(label="Manual Comparison", id="task-manual-compare", variant="warning"),
@@ -36,6 +40,12 @@ class TwitterScraperApp(App):
             self.push_screen(BrowserLoginScreen())
         elif event.button.id == "quit":
             self.exit()
+
+    def action_toggle_dark(self) -> None:
+        """An action to toggle dark mode."""
+        self.theme = (
+            "textual-dark" if self.theme == "textual-light" else "textual-light"
+        )
 
 
 if __name__ == '__main__':
