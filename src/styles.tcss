@@ -25,6 +25,41 @@ Center Label {
     margin-right: 2;
 }
 
+#title {
+    text-align: center;
+    text-style: bold;
+    margin-bottom: 2;
+    color: $accent;
+}
+
+#removed-header, #added-header {
+    text-style: bold;
+    margin-top: 1;
+    margin-bottom: 1;
+}
+
+#removed-header {
+    color: red;
+}
+
+#added-header {
+    color: green;
+}
+
+#removed-list, #added-list {
+    margin-bottom: 1;
+    padding: 1;
+    background: $background-lighten-1;
+    height: auto;
+    max-height: 10;
+    overflow-y: scroll;
+}
+
+#removed-total, #added-total {
+    text-style: italic;
+    margin-bottom: 2;
+}
+
 Button {
     margin-top: 1;
     max-width: 100;

@@ -1,6 +1,8 @@
+from colorama import Fore, Style
 from textual.app import ComposeResult
 from textual.screen import Screen
-from textual.widgets import Header, Label, Button, Footer
+from textual.widgets import Header, Label, Button, Footer, Static
+from textual.containers import Center, Vertical
 
 from common.types import ComparisonResults
 
@@ -12,13 +14,18 @@ class ResultsScreen(Screen):
 
     def compose(self) -> ComposeResult:
         yield Header()
-        yield Label("Comparison Results", id="title")
+        with Center(id="results-container"):
+            yield Label("Comparison Results", id="title")
 
-        removed_list = "\n".join([f"{u} -> {s}" for u, s in self.results.removed.items()])
-        yield Label(f"Removed:\n{removed_list if removed_list else 'None'}", id="removed_label")
+            yield Label("Missing Users", id="removed-header")
+            removed_list = "\n".join([f"{u} -> {s}" for u, s in self.results.removed.items()])
+            yield Static(removed_list if removed_list else "No users removed.", id="removed-list")
+            yield Label(f"Total missing: {len(self.results.removed)}", id="removed-total")
 
-        added_list = "\n".join([f"{u}" for u in self.results.added])
-        yield Label(f"Added:\n{added_list if added_list else 'None'}", id="added_label")
+            yield Label("Added Users", id="added-header")
+            added_list = "\n".join([f"{u}" for u in self.results.added])
+            yield Static(added_list if added_list else "No users added.", id="added-list")
+            yield Label(f"Total added: {len(self.results.added)}", id="added-total")
 
-        yield Button("Return to Menu", action="app.back", variant="primary")
+            yield Button("Go Back", action="app.back", variant="primary")
         yield Footer()
