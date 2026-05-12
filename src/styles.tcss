@@ -1,4 +1,5 @@
 Center {
+    margin-top: 1;
     margin: 2;
     padding: 2;
     content-align: center middle;
@@ -64,4 +65,8 @@ Button {
     margin-top: 1;
     max-width: 100;
     width: 100%;
+}
+
+Center DirectoryTree {
+    margin-bottom: 1;
 }

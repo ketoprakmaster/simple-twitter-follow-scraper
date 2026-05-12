@@ -13,7 +13,7 @@ from common.exceptions import (
 )
 from ui.recordResult import ResultsScreen
 
-class QuickCompareScreen(Screen):
+class CompareScreen(Screen):
     BINDINGS = [('ctrl+c', 'screen.compare', 'continue')]
 
     def compose(self) -> ComposeResult:
@@ -27,6 +27,7 @@ class QuickCompareScreen(Screen):
         )
         yield Footer()
 
+class QuickCompareScreen(CompareScreen):
     @on(Button.Pressed, "#compare_btn")
     def action_compare(self) -> None:
         username = self.query_one("#user_input", Input).value

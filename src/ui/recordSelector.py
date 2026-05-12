@@ -1,39 +1,58 @@
 from pathlib import Path
+from textual import on
 from textual.app import ComposeResult
+from textual.containers import Center, Grid, Horizontal, HorizontalGroup, Vertical
 from textual.screen import Screen
-from textual.widgets import Button, Footer, Header, Label, ListItem, ListView
+from textual.widgets import Button, DirectoryTree, Footer, Header, Label, ListItem, ListView
 
 from core.userHandling import UserSnapshot
+from config.paths import USER_RECORDS_DIR
+from ui.recordResult import ResultsScreen
 
-# TODO: wip
+
 class FileSelectionScreen(Screen):
-    def __init__(self, username, mode, prompt, callback):
+    def __init__(self, username, mode):
         super().__init__()
         self.username = username
         self.mode = mode
-        self.prompt = prompt
-        self.callback = callback
+        self.path = USER_RECORDS_DIR / username / mode
 
     def compose(self) -> ComposeResult:
         yield Header()
-        yield Label(self.prompt)
-        yield ListView(id="file_list")
-        yield Button("Cancel", id="cancel")
+        with Center():
+            yield Label("Past Records", id="past-label")
+            yield DirectoryTree(self.path, id="past-records")
+            yield Label("future Records", id="future-label")
+            yield DirectoryTree(self.path, id="future-records")
+
+            yield Button("Continue", id="compare", variant="success")
+            yield Button("Cancel", action="app.back", id="back", variant="error")
         yield Footer()
 
-    def on_mount(self) -> None:
-        temp = UserSnapshot(self.username, self.mode, set())
-        files = sorted(temp._return_all_stored_records())
-        list_view = self.query_one("#file_list", ListView)
-        for f in files:
-            list_view.append(ListItem(Label(f.name), id=str(f)))
+    @on(DirectoryTree.FileSelected, "#past-records")
+    def filePastSelect(self, event: DirectoryTree.FileSelected):
+        label = self.query_one("#past-label", Label)
+        self.past_path = event.path
+        label.update(f"Past Records: {self.past_path.stem}")
 
-    def on_list_view_selected(self, event: ListView.Selected) -> None:
-        # event.item is the ListItem
-        file_path = Path(event.item.id)
-        self.callback(file_path)
-        self.app.pop_screen()
+    @on(DirectoryTree.FileSelected, "#future-records")
+    def fileFutureSelect(self, event: DirectoryTree.FileSelected):
+        label = self.query_one("#future-label", Label)
+        self.future_path = event.path
+        label.update(f"future Records: {self.future_path.stem}")
 
-    def on_button_pressed(self, event: Button.Pressed) -> None:
-        if event.button.id == "cancel":
-            self.app.pop_screen()
+    @on(Button.Pressed, "#compare")
+    def compare(self, event: Button.Pressed):
+        if hasattr(self, "past_path") and hasattr(self, "future_path"):
+            temp = UserSnapshot(self.username, self.mode, set())
+
+            latest_users = temp._read_from_single_records(self.future_path)
+            past_users = temp._read_from_single_records(self.past_path)
+
+            now_snap = UserSnapshot(self.username, self.mode, latest_users)
+            then_snap = UserSnapshot(self.username, self.mode, past_users)
+
+            results = now_snap - then_snap
+            self.app.push_screen(ResultsScreen(results))
+        else:
+            self.notify("Please fill the corresponding Input!", severity="warning", timeout=1)
