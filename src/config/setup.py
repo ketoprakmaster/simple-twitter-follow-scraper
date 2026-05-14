@@ -13,7 +13,7 @@ class TextualHandler(logging.Handler):
 
     def emit(self, record):
         try:
-            message = escape(record.getMessage())
+            message = record.getMessage()
 
             def log_to_ui():
                 log_widget = getattr(self.app, "active_rich_log", None)

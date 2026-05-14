@@ -1,4 +1,3 @@
-from colorama import Fore, Style
 from textual.app import ComposeResult
 from textual.screen import Screen
 from textual.widgets import Header, Label, Button, Footer, Static

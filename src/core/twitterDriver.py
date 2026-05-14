@@ -1,6 +1,4 @@
-from colorama import Fore, Style
 import logging
-import asyncio
 import random
 
 import nodriver as uc
@@ -158,7 +156,7 @@ class TwitterDriver:
             if diff:
                 for user in diff:
                     self._users_list.add(user)
-                    ui_log.info(f"{user.ljust(50, '.')}:{Fore.CYAN}added ({len(self._users_list)}){Style.RESET_ALL}",
+                    ui_log.info(f"{user.ljust(50, '.')}:[cyan]added ({len(self._users_list)})[/cyan]",
                         extra={"ui_only": True}
                     )
 
@@ -261,7 +259,7 @@ class TwitterDriver:
         """
         Detailed check for user status using keyword mapping from the empty state div.
         """
-        self.driver_log.info(f"{Fore.LIGHTYELLOW_EX}verifying {username} user state..")
+        self.driver_log.info(f"[magenta]verifying {username} user state..[/magenta]")
         page = await self.driver.get(f"https://x.com/{username}")
 
         try:
