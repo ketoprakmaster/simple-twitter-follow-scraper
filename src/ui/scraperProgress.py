@@ -56,7 +56,9 @@ class ScraperProgressScreen(Screen):
                     for user in false_negatives:
                         del results.removed[user]
 
-            current_snap.save()
+            if results.has_actual_changes:
+                current_snap.save()
+
             self.app.switch_screen(ResultsScreen(results=results))
 
         except (UserScrapeOperationFailed, DriverNotInitialized) as e:
