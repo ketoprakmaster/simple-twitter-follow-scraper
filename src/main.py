@@ -2,6 +2,7 @@ from textual.app import App, ComposeResult
 from textual.containers import Center
 from textual.widgets import Button, Footer, Header
 
+from common.helper import get_resource_path
 from ui.compareManual import ManualCompareScreen
 from ui.compareQuick import QuickCompareScreen
 from ui.scraperLogin import BrowserLoginScreen
@@ -9,7 +10,7 @@ from ui.scraperTask import ScraperConfigScreen
 from config.setup import setup_logging
 
 class TwitterScraperApp(App):
-    CSS_PATH = 'styles.tcss'
+    CSS_PATH = get_resource_path("styles.tcss")
     BINDINGS = [
         ("d", "toggle_dark", "Toggle dark mode"),
         ("q", "back", "Go Back")
