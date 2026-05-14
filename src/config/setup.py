@@ -3,6 +3,8 @@ import threading
 from rich.markup import escape
 from textual.widgets import RichLog
 
+from config.paths import LOG_FILE_PATH
+
 class TextualHandler(logging.Handler):
     def __init__(self, app):
         super().__init__()
@@ -38,7 +40,8 @@ def setup_logging(app):
     rootLogger.setLevel(logging.INFO)
 
     # 1. File Handler
-    filelog = logging.FileHandler(filename="logging.log")
+    LOG_FILE_PATH.parent.mkdir(parents=True, exist_ok=True) # ensure dir exists
+    filelog = logging.FileHandler(LOG_FILE_PATH.resolve())
     fileFormatter = logging.Formatter(
         "%(name)-10s: %(asctime)s - %(levelname)-8s -  %(filename)s:%(lineno)s   >>> %(message)s"
     )
