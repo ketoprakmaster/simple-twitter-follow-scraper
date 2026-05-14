@@ -19,27 +19,27 @@ class FileSelectionScreen(Screen):
 
     def compose(self) -> ComposeResult:
         yield Header()
-        with Center():
+        with Center(classes="center-max-elem-100"):
             yield Label("Past Records", id="past-label")
-            yield DirectoryTree(self.path, id="past-records")
+            yield DirectoryTree(self.path, id="past-records", classes="my-1")
             yield Label("future Records", id="future-label")
-            yield DirectoryTree(self.path, id="future-records")
+            yield DirectoryTree(self.path, id="future-records", classes="my-1")
 
-            yield Button("Continue", id="compare", variant="success")
-            yield Button("Cancel", action="app.back", id="back", variant="error")
+            yield Button("Continue", id="compare", variant="success", )
+            yield Button("Cancel", action="app.go_back", id="back", variant="error")
         yield Footer()
 
     @on(DirectoryTree.FileSelected, "#past-records")
     def filePastSelect(self, event: DirectoryTree.FileSelected):
         label = self.query_one("#past-label", Label)
         self.past_path = event.path
-        label.update(f"Past Records: {self.past_path.stem}")
+        label.update(f"Past Records: [magenta]{self.past_path.stem}[/]")
 
     @on(DirectoryTree.FileSelected, "#future-records")
     def fileFutureSelect(self, event: DirectoryTree.FileSelected):
         label = self.query_one("#future-label", Label)
         self.future_path = event.path
-        label.update(f"future Records: {self.future_path.stem}")
+        label.update(f"future Records: [cyan]{self.future_path.stem}[/]")
 
     @on(Button.Pressed, "#compare")
     def compare(self, event: Button.Pressed):
@@ -53,6 +53,6 @@ class FileSelectionScreen(Screen):
             then_snap = UserSnapshot(self.username, self.mode, past_users)
 
             results = now_snap - then_snap
-            self.app.push_screen(ResultsScreen(results))
+            self.app.switch_screen(ResultsScreen(results))
         else:
             self.notify("Please fill the corresponding Input!", severity="warning", timeout=1)

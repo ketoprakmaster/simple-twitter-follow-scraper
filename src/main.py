@@ -1,4 +1,4 @@
-from textual.app import App, ComposeResult
+from textual.app import App, ComposeResult, ScreenStackError
 from textual.containers import Center
 from textual.widgets import Button, Footer, Header
 
@@ -13,7 +13,7 @@ class TwitterScraperApp(App):
     CSS_PATH = get_resource_path("styles.tcss")
     BINDINGS = [
         ("d", "toggle_dark", "Toggle dark mode"),
-        ("q", "back", "Go Back")
+        ("q", "app.go_back", "Go Back")
     ]
 
     def on_mount(self) -> None:
@@ -21,13 +21,12 @@ class TwitterScraperApp(App):
 
     def compose(self) -> ComposeResult:
         yield Header()
-        yield Center(
-            Button(label="Start scraping", id="task-scrape", variant="primary"),
-            Button(label="Quick Comparison", id="task-quick-compare", variant="warning"),
-            Button(label="Manual Comparison", id="task-manual-compare", variant="warning"),
-            Button(label="Configure Browser/Twitter", id="configure-browser", variant="success"),
-            Button(label="Quit", id="quit", variant="error"),
-        )
+        with Center(classes="center-max-elem-100"):
+            yield Button(label="Start scraping", id="task-scrape", variant="primary")
+            yield Button(label="Quick Comparison", id="task-quick-compare", variant="warning")
+            yield Button(label="Manual Comparison", id="task-manual-compare", variant="warning")
+            yield Button(label="Configure Browser/Twitter", id="configure-browser", variant="success")
+            yield Button(label="Quit", id="quit", variant="error")
         yield Footer()
 
     def on_button_pressed(self, event: Button.Pressed):
@@ -47,6 +46,13 @@ class TwitterScraperApp(App):
         self.theme = (
             "textual-dark" if self.theme == "textual-light" else "textual-light"
         )
+
+    async def action_go_back(self) -> None:
+        """An action to go back by pop screen, if no screen exist just quit instead"""
+        try:
+            self.pop_screen()
+        except ScreenStackError:
+            await self.action_quit()
 
 
 if __name__ == '__main__':

@@ -18,13 +18,13 @@ class CompareScreen(Screen):
 
     def compose(self) -> ComposeResult:
         yield Header()
-        yield Center(
-            Label("Enter Twitter Username:"),
-            Input(placeholder="@username", id="user_input"),
-            Select([(m.value, m) for m in MODE], id="mode_select", allow_blank=False),
-            Button("Compare", variant="primary", id="compare_btn"),
-            Button("Go Back", action="app.back"),
-        )
+        with Center(classes="center-max-elem-100 mt-2 "):
+            yield Label("Enter Twitter Username:", classes="mb-2")
+            yield Input(placeholder="@username", id="user_input")
+            yield Select([(m.value, m) for m in MODE], id="mode_select", allow_blank=False)
+            yield Button("Compare", variant="primary", id="compare_btn", classes="mt-2")
+            yield Button("Go Back", action="app.go_back")
+
         yield Footer()
 
 class QuickCompareScreen(CompareScreen):
@@ -51,7 +51,7 @@ class QuickCompareScreen(CompareScreen):
             then_snap = UserSnapshot(username, mode, past_users, timestamp=all_records[-2].stem)
 
             results = now_snap - then_snap
-            self.app.push_screen(ResultsScreen(results=results))
+            self.app.switch_screen(ResultsScreen(results=results))
 
         except (NotEnoughUserRecords, UserRecordsNotExists, FiledecodeError) as e:
             self.notify(f"ERROR: {e}", severity="error",timeout=1)

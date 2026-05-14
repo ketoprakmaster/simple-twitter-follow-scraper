@@ -18,10 +18,10 @@ class ScraperProgressScreen(Screen):
 
     def compose(self) -> ComposeResult:
         yield Header()
-        with Center():
-            yield Label("Scraping in progress... please wait.", id="status_label")
-            yield RichLog(id="main_log", markup=True)
-            yield Button("Cancel", action="app.back", variant="error")
+        with Center(classes="center-max-elem-100"):
+            yield Label("Scraping in progress... please wait.", classes="text-center")
+            yield RichLog(id="main_log", markup=True, classes="my-2")
+            yield Button("Cancel", action="app.go_back", variant="error")
         yield Footer()
 
     def on_mount(self) -> None:
@@ -57,7 +57,7 @@ class ScraperProgressScreen(Screen):
                         del results.removed[user]
 
             current_snap.save()
-            self.app.push_screen(ResultsScreen(results=results))
+            self.app.switch_screen(ResultsScreen(results=results))
 
         except (UserScrapeOperationFailed, DriverNotInitialized) as e:
             self.query_one("#main_log", RichLog).write(f"[red]Error: {e}[/red]")

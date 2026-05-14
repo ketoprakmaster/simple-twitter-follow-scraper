@@ -7,10 +7,10 @@ from core.twitterDriver import TwitterDriver
 class BrowserLoginScreen(Screen):
     def compose(self) -> ComposeResult:
         yield Header()
-        with Center():
-            yield Label("Please log in to Twitter in the opened browser window.")
-            yield Label("Once you are logged in and on the home page, click the button below.")
-            yield Button("I have logged in", action="app.back", variant="success")
+        with Center(classes="center-max-elem-100 mt-2"):
+            yield Label("Please log in to Twitter in the opened browser window.", classes="mt-2")
+            yield Label("Once you are logged in and on the home page, click the button below.", classes="mb-2")
+            yield Button("I have logged in", action="app.go_back", variant="success")
         yield Footer()
 
     def on_mount(self) -> None:

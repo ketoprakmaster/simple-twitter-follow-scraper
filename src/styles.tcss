@@ -1,72 +1,76 @@
-Center {
-    margin-top: 1;
-    margin: 2;
-    padding: 2;
-    content-align: center middle;
-}
-
-Center * {
-    max-width: 100;
-    width: 100%;
-}
-
-Center Label {
-    margin-bottom: 1;
-}
-
-#input-grid {
-    grid-size: 2;
-    grid-columns: 1fr 2fr;
+/*apply all element to 100% width with limit to 100 */
+.center-max-elem-100 * {
+    max-width: 100%;
     width: 100;
-    height: auto;
 }
 
-#input-grid Label {
-    height: 3;
-    margin-right: 2;
+.mb-1 {
+    margin-bottom: 1;
 }
 
-#title {
-    text-align: center;
-    text-style: bold;
-    margin-bottom: 2;
-    color: $accent;
-}
-
-#removed-header, #added-header {
-    text-style: bold;
+.mt-1 {
     margin-top: 1;
-    margin-bottom: 1;
 }
 
-#removed-header {
-    color: red;
+.mb-2 {
+    margin-bottom: 2;
 }
 
-#added-header {
-    color: green;
+.mt-2 {
+    margin-top: 2;
 }
 
-#removed-list, #added-list {
-    margin-bottom: 1;
+.my-1 {
+    margin: 1 0 1 0;
+}
+
+.my-2 {
+    margin: 2 0 2 0;
+}
+
+.m-1 {
+    margin: 1;
+}
+
+.p-1 {
     padding: 1;
-    background: $background-lighten-1;
-    height: auto;
-    max-height: 10;
-    overflow-y: scroll;
 }
 
-#removed-total, #added-total {
-    text-style: italic;
-    margin-bottom: 2;
+.m-2 {
+    margin: 2;
 }
 
-Button {
-    margin-top: 1;
-    max-width: 100;
+.p-2 {
+    padding: 2;
+}
+
+.text-center {
+    content-align: center middle
+
+}
+
+.w-full {
     width: 100%;
 }
 
-Center DirectoryTree {
-    margin-bottom: 1;
+.input-grid {
+    grid-size: 2 5;
+    height: auto;
+}
+
+.input-grid Label {
+    content-align-vertical: middle
+
+}
+
+.bg-lighten-1 {
+    background: $background-lighten-1;
+}
+
+.border-primary {
+    border: $primary;
+}
+
+Center {
+    padding: 2;
 }

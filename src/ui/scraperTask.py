@@ -10,11 +10,10 @@ from ui.scraperProgress import ScraperProgressScreen
 class ScraperConfigScreen(Screen):
     def compose(self) -> ComposeResult:
         yield Header()
-        with Center():
-            with Grid(id="input-grid"):
+        with Center(classes="center-max-elem-100"):
+            with Grid(classes="input-grid my-2"):
                 yield Label("Run the browser on Headless mode?")
                 yield Checkbox("Headless", value=True, id="headless_check")
-
                 yield Label("Which users follow you want to scrape?")
                 yield Select(
                     [("Following", MODE.following), ("Followers", MODE.followers)],
@@ -32,4 +31,4 @@ class ScraperConfigScreen(Screen):
         headless = self.query_one("#headless_check", Checkbox).value
         mode: MODE = self.query_one("#mode_select", Select).value  # pyright: ignore[reportAssignmentType]
 
-        self.app.push_screen(ScraperProgressScreen(headless=headless, mode=mode))
+        self.app.switch_screen(ScraperProgressScreen(headless=headless, mode=mode))

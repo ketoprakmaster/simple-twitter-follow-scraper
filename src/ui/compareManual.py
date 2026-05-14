@@ -21,7 +21,7 @@ class ManualCompareScreen(CompareScreen):
     @on(Button.Pressed, "#compare_btn")
     def continue_btn(self, event: Button.Pressed) -> None:
         self.username = self.query_one("#user_input", Input).value
-        self.mode: MODE = self.query_one("#mode_select", Select).value  # pyright: ignore[reportAttributeAccessIssue]
+        self.mode: MODE = self.query_one("#mode_select", Select).value  # pyright: ignore
 
         if self.mode not in MODE or not self.username:
             self.notify("Please fill the corresponding Input!", severity="warning", timeout=2)
@@ -32,4 +32,4 @@ class ManualCompareScreen(CompareScreen):
             self.notify(f"Error no such records exists at:\n{user_dir}", severity="error", timeout=2)
             return
 
-        self.app.push_screen(FileSelectionScreen(self.username,self.mode))
+        self.app.switch_screen(FileSelectionScreen(self.username,self.mode))
