@@ -20,11 +20,12 @@ class ScraperProgressScreen(Screen):
         yield Header()
         with Center():
             yield Label("Scraping in progress... please wait.", id="status_label")
-            yield RichLog(id="main_log", highlight=True, markup=True)
+            yield RichLog(id="main_log", markup=True)
             yield Button("Cancel", action="app.back", variant="error")
         yield Footer()
 
     def on_mount(self) -> None:
+        self.app.active_rich_log = self.query_one("#main_log")  # pyright: ignore
         self.scrape_worker = self.run_worker(self.do_scrape(), thread=False)
 
     async def do_scrape(self):
@@ -67,5 +68,6 @@ class ScraperProgressScreen(Screen):
                 scraper.quit()
 
     def _on_unmount(self) -> None:
+        self.app.active_rich_log = None   # pyright: ignore
         self.scrape_worker.cancel()
         return super()._on_unmount()

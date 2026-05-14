@@ -11,6 +11,8 @@ from common.types import MODE, UserStatus
 from common.decorators import timing_decorator
 from common.exceptions import DriverNotInitialized, UserScrapeOperationFailed
 
+ui_log = logging.getLogger("ui_status")
+
 class TwitterDriver:
     """
     A driver class to handle Twitter scraping using nodriver.
@@ -31,7 +33,7 @@ class TwitterDriver:
         self.page: uc.Tab
         self.headless: bool = headless
         self.mode: MODE = mode
-        self.driver_log = logging.getLogger("driver")
+        self.driver_log = logging.getLogger(__name__)
         self._users_list : set[str] = set()
 
     @timing_decorator(msg="initializing drivers")
@@ -156,7 +158,9 @@ class TwitterDriver:
             if diff:
                 for user in diff:
                     self._users_list.add(user)
-                    print(f"{user.ljust(50, '.')}:{Fore.CYAN}added ({len(self._users_list)}){Style.RESET_ALL}")
+                    ui_log.info(f"{user.ljust(50, '.')}:{Fore.CYAN}added ({len(self._users_list)}){Style.RESET_ALL}",
+                        extra={"ui_only": True}
+                    )
 
             return any(diff)
 
