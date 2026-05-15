@@ -1,6 +1,5 @@
 import logging
 import threading
-from rich.markup import escape
 from textual.app import App
 
 from config.paths import LOG_FILE_PATH

@@ -3,10 +3,8 @@ from textual.containers import Center
 from textual.screen import Screen
 from textual.widgets import Button, Footer, Header, Label, RichLog
 
-from common.exceptions import DriverNotInitialized, UserRecordsNotExists, UserScrapeOperationFailed
-from common.types import MODE, ComparisonResults
-from scraper.driver import TwitterDriver
-from models.users import UserRecords, UserSnapshot
+from common.types import MODE
+from scraper.pipeline import ScraperPipeline
 from ui.recordResult import ResultsScreen
 
 
@@ -31,40 +29,15 @@ class ScraperProgressScreen(Screen):
     async def do_scrape(self):
         scraper = None
         try:
-            scraper = TwitterDriver(headless=self.headless, mode=self.mode)
-            await scraper.initialize_driver()
-            scraped_users = await scraper.scrape_user_follows()
-            username = scraper.username
+            pipeline = ScraperPipeline(self.headless, self.mode)
 
-            current_snap = UserSnapshot(username, self.mode, scraped_users)
-            history = UserRecords(username, self.mode)
-
-            try:
-                past_snap = history[-1] # get the latest snapshot
-                results = current_snap - past_snap
-            except UserRecordsNotExists: # UserRecordsNotExists
-                results = ComparisonResults(added=scraped_users)
-
-            if results.removed:
-                await results.check_status(driver=scraper)
-                false_negatives = {
-                    user for user, status in results.removed.items()
-                    if status in {"Exists", "Withheld"} # Valid statuses
-                }
-                if false_negatives:
-                    current_snap.users.update(false_negatives)
-                    for user in false_negatives:
-                        del results.removed[user]
-
-            if results.has_actual_changes:
-                current_snap.save()
+            await pipeline.initialize()
+            results = await pipeline.run()
 
             self.app.switch_screen(ResultsScreen(results=results))
 
-        except (UserScrapeOperationFailed, DriverNotInitialized) as e:
-            self.query_one("#main_log", RichLog).write(f"[red]Error: {e}[/red]")
         except Exception as e:
-            self.query_one("#main_log", RichLog).write(f"[red]Unexpected Error: {e}[/red]")
+            self.query_one("#main_log", RichLog).write(f"[red]Error: {e}[/red]")
         finally:
             if scraper:
                 scraper.quit()
