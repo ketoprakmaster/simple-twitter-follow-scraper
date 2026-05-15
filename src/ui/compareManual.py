@@ -3,13 +3,13 @@ from textual import on, work
 from textual.widgets import Button, Input, RichLog, Select
 
 from common.types import MODE
-from core.userHandling import UserSnapshot
+from core.userHandling import UserRecords
 from config.paths import USER_RECORDS_DIR
 from ui.compareQuick import CompareScreen
 from ui.recordSelector import FileSelectionScreen
 from ui.recordResult import ResultsScreen
 
-# TODO: wip
+
 class ManualCompareScreen(CompareScreen):
     def __init__(self):
         super().__init__()
@@ -27,9 +27,9 @@ class ManualCompareScreen(CompareScreen):
             self.notify("Please fill the corresponding Input!", severity="warning", timeout=2)
             return
 
-        user_dir = USER_RECORDS_DIR / self.username / self.mode
-        if not Path(user_dir).exists():
-            self.notify(f"Error no such records exists at:\n{user_dir}", severity="error", timeout=2)
+        history = UserRecords(self.username, self.mode)
+        if not history.path.exists():
+            self.notify(f"Error no such records exists at:\n{history.path}", severity="error", timeout=2)
             return
 
-        self.app.switch_screen(FileSelectionScreen(self.username,self.mode))
+        self.app.switch_screen(FileSelectionScreen(history))

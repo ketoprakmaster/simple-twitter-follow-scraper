@@ -21,12 +21,12 @@ class TwitterScraperApp(App):
 
     def compose(self) -> ComposeResult:
         yield Header()
-        with Center(classes="center-max-elem-100"):
-            yield Button(label="Start scraping", id="task-scrape", variant="primary")
-            yield Button(label="Quick Comparison", id="task-quick-compare", variant="warning")
-            yield Button(label="Manual Comparison", id="task-manual-compare", variant="warning")
-            yield Button(label="Configure Browser/Twitter", id="configure-browser", variant="success")
-            yield Button(label="Quit", id="quit", variant="error")
+        with Center(classes="center-max-elem-100 mt-2"):
+            yield Button(label="Start scraping", id="task-scrape", variant="primary", classes="mb-1")
+            yield Button(label="Quick Comparison", id="task-quick-compare", variant="warning", classes="mb-1")
+            yield Button(label="Manual Comparison", id="task-manual-compare", variant="warning", classes="mb-1")
+            yield Button(label="Configure Browser/Twitter", id="configure-browser", variant="success", classes="mb-1")
+            yield Button(label="Quit", id="quit", variant="error", classes="mb-1")
         yield Footer()
 
     def on_button_pressed(self, event: Button.Pressed):

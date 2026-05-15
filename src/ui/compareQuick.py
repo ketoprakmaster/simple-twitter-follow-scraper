@@ -5,13 +5,14 @@ from textual.screen import Screen
 from textual.widgets import Header, Footer, Button, Input, Select, Label
 
 from common.types import MODE
-from core.userHandling import UserSnapshot
+from core.userHandling import UserRecords, UserSnapshot
 from common.exceptions import (
     NotEnoughUserRecords,
     FiledecodeError,
     UserRecordsNotExists,
 )
 from ui.recordResult import ResultsScreen
+
 
 class CompareScreen(Screen):
     BINDINGS = [('ctrl+c', 'screen.compare', 'continue')]
@@ -38,17 +39,14 @@ class QuickCompareScreen(CompareScreen):
             return
 
         try:
-            temp = UserSnapshot(username, mode, set())
-            all_records = sorted(temp._return_all_stored_records())
+            history = UserRecords(username, mode)
+            history.refresh()
 
-            if len(all_records) < 2:
-                raise NotEnoughUserRecords("Need at least 2 records for a quick comparison.")
+            if len(history) < 2:
+                raise NotEnoughUserRecords("Need at least 2 records.")
 
-            latest_users = temp._read_from_single_records(all_records[-1])
-            past_users = temp._read_from_single_records(all_records[-2])
-
-            now_snap = UserSnapshot(username, mode, latest_users, timestamp=all_records[-1].stem)
-            then_snap = UserSnapshot(username, mode, past_users, timestamp=all_records[-2].stem)
+            now_snap = history[-1]
+            then_snap = history[-2]
 
             results = now_snap - then_snap
             self.app.switch_screen(ResultsScreen(results=results))

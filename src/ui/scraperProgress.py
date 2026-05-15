@@ -3,10 +3,10 @@ from textual.containers import Center
 from textual.screen import Screen
 from textual.widgets import Button, Footer, Header, Label, RichLog
 
-from common.exceptions import DriverNotInitialized, UserScrapeOperationFailed
-from common.types import MODE
+from common.exceptions import DriverNotInitialized, UserRecordsNotExists, UserScrapeOperationFailed
+from common.types import MODE, ComparisonResults
 from core.twitterDriver import TwitterDriver
-from core.userHandling import UserSnapshot
+from core.userHandling import UserRecords, UserSnapshot
 from ui.recordResult import ResultsScreen
 
 
@@ -37,12 +37,12 @@ class ScraperProgressScreen(Screen):
             username = scraper.username
 
             current_snap = UserSnapshot(username, self.mode, scraped_users)
+            history = UserRecords(username, self.mode)
 
             try:
-                past_snap = UserSnapshot.from_latest(username, self.mode)
+                past_snap = history[-1] # get the latest snapshot
                 results = current_snap - past_snap
-            except Exception: # UserRecordsNotExists
-                from common.types import ComparisonResults
+            except UserRecordsNotExists: # UserRecordsNotExists
                 results = ComparisonResults(added=scraped_users)
 
             if results.removed:

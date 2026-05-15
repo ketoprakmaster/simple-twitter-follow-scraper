@@ -1,29 +1,31 @@
 from pathlib import Path
 from textual import on
 from textual.app import ComposeResult
-from textual.containers import Center, Grid, Horizontal, HorizontalGroup, Vertical
+from textual.containers import Center
 from textual.screen import Screen
-from textual.widgets import Button, DirectoryTree, Footer, Header, Label, ListItem, ListView
+from textual.widgets import Button, DirectoryTree, Footer, Header, Label
 
-from core.userHandling import UserSnapshot
-from config.paths import USER_RECORDS_DIR
+from core.userHandling import UserRecords
+from common.exceptions import FiledecodeError
 from ui.recordResult import ResultsScreen
 
 
 class FileSelectionScreen(Screen):
-    def __init__(self, username, mode):
+    def __init__(self, history: UserRecords):
         super().__init__()
-        self.username = username
-        self.mode = mode
-        self.path = USER_RECORDS_DIR / username / mode
+        self.history = history
+        self.past_path : Path | None = None
+        self.future_path : Path | None = None
 
     def compose(self) -> ComposeResult:
         yield Header()
+        # using DirectoryTree is substantially faster than ListView or VerticalScroll
+        # figures loading hundreds of records slows too much
         with Center(classes="center-max-elem-100"):
             yield Label("Past Records", id="past-label")
-            yield DirectoryTree(self.path, id="past-records", classes="my-1")
+            yield DirectoryTree(self.history.path, id="past-records", classes="my-1")
             yield Label("future Records", id="future-label")
-            yield DirectoryTree(self.path, id="future-records", classes="my-1")
+            yield DirectoryTree(self.history.path, id="future-records", classes="my-1")
 
             yield Button("Continue", id="compare", variant="success", )
             yield Button("Cancel", action="app.go_back", id="back", variant="error")
@@ -43,16 +45,16 @@ class FileSelectionScreen(Screen):
 
     @on(Button.Pressed, "#compare")
     def compare(self, event: Button.Pressed):
-        if hasattr(self, "past_path") and hasattr(self, "future_path"):
-            temp = UserSnapshot(self.username, self.mode, set())
+        if not self.past_path or not self.future_path:
+            self.notify("Please select both records!", severity="warning")
+            return
 
-            latest_users = temp._read_from_single_records(self.future_path)
-            past_users = temp._read_from_single_records(self.past_path)
-
-            now_snap = UserSnapshot(self.username, self.mode, latest_users)
-            then_snap = UserSnapshot(self.username, self.mode, past_users)
+        try:
+            then_snap = self.history.load_snapshot(self.past_path)
+            now_snap = self.history.load_snapshot(self.future_path)
 
             results = now_snap - then_snap
             self.app.switch_screen(ResultsScreen(results))
-        else:
-            self.notify("Please fill the corresponding Input!", severity="warning", timeout=1)
+
+        except FiledecodeError as e:
+            self.notify(str(e), severity="error")
