@@ -5,7 +5,7 @@ from textual.containers import Center
 from textual.screen import Screen
 from textual.widgets import Button, DirectoryTree, Footer, Header, Label
 
-from core.userHandling import UserRecords
+from models.users import UserRecords
 from common.exceptions import FiledecodeError
 from ui.recordResult import ResultsScreen
 

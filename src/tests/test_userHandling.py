@@ -1,14 +1,13 @@
 import pytest
 import json
-from pathlib import Path
 from common.types import MODE
-from core.userHandling import UserRecords, UserSnapshot
+from models.users import UserRecords, UserSnapshot
 from common.exceptions import FiledecodeError
 
 @pytest.fixture
 def mock_records_dir(tmp_path, monkeypatch):
     """Mocks the USER_RECORDS_DIR to a temporary folder for testing."""
-    monkeypatch.setattr("core.userHandling.USER_RECORDS_DIR", tmp_path)
+    monkeypatch.setattr("models.users.USER_RECORDS_DIR", tmp_path)
     return tmp_path
 
 def test_snapshot_save(mock_records_dir):

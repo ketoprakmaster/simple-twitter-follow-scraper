@@ -2,7 +2,7 @@ from textual.app import ComposeResult
 from textual.containers import Center
 from textual.screen import Screen
 from textual.widgets import Button, Footer, Header, Label
-from core.twitterDriver import TwitterDriver
+from scraper.driver import TwitterDriver
 
 class BrowserLoginScreen(Screen):
     def compose(self) -> ComposeResult:

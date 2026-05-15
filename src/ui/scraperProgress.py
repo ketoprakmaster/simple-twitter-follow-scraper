@@ -5,8 +5,8 @@ from textual.widgets import Button, Footer, Header, Label, RichLog
 
 from common.exceptions import DriverNotInitialized, UserRecordsNotExists, UserScrapeOperationFailed
 from common.types import MODE, ComparisonResults
-from core.twitterDriver import TwitterDriver
-from core.userHandling import UserRecords, UserSnapshot
+from scraper.driver import TwitterDriver
+from models.users import UserRecords, UserSnapshot
 from ui.recordResult import ResultsScreen
 
 

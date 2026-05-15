@@ -1,6 +1,5 @@
 import logging
 import time
-import asyncio
 import inspect
 from functools import wraps
 
@@ -19,7 +18,7 @@ def timing_decorator(msg: str = ""):
                     time_log.info(f"{msg} took {end_time - start_time:.4f} seconds.")
                     return result
                 return async_wrapped()
-            
+
             start_time = time.perf_counter()
             result = func(*args, **kwargs)
             end_time = time.perf_counter()

@@ -5,7 +5,7 @@ from textual.screen import Screen
 from textual.widgets import Header, Footer, Button, Input, Select, Label
 
 from common.types import MODE
-from core.userHandling import UserRecords, UserSnapshot
+from models.users import UserRecords
 from common.exceptions import (
     NotEnoughUserRecords,
     FiledecodeError,

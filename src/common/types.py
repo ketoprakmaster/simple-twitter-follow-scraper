@@ -1,6 +1,6 @@
 from enum import StrEnum
 from dataclasses import dataclass, field
-from pathlib import Path
+
 
 class MODE(StrEnum):
     following = "following"
@@ -12,13 +12,6 @@ class UserStatus(StrEnum):
     DEACTIVATED = "Deactivated"
     WITHHELD    = "Withheld"
     MISSING     = "Missing"
-
-@dataclass(frozen=True)
-class UserRecords:
-    username: str
-    mode: MODE
-    users: set[str]
-    file_path: Path | None = None
 
 @dataclass
 class ComparisonResults:

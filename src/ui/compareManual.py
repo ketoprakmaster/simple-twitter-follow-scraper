@@ -1,13 +1,11 @@
 from pathlib import Path
-from textual import on, work
-from textual.widgets import Button, Input, RichLog, Select
+from textual import on
+from textual.widgets import Button, Input, Select
 
 from common.types import MODE
-from core.userHandling import UserRecords
-from config.paths import USER_RECORDS_DIR
+from models.users import UserRecords
 from ui.compareQuick import CompareScreen
 from ui.recordSelector import FileSelectionScreen
-from ui.recordResult import ResultsScreen
 
 
 class ManualCompareScreen(CompareScreen):
