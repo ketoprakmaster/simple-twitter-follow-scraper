@@ -1,103 +1,69 @@
-# tests/test_userHandling.py
 import pytest
 import json
-import time
-from unittest.mock import patch
-from core.userHandling import (
-    saveUsersRecord,
-    compareRecentRecords,
-    makeComparison,
-    readFromRecords,
-    returnAllRecords,
-    processScrapeResults
-)
-from common.types import ComparisonResults, MODE
-from common.exceptions import NotEnoughUserRecords
-from core.userHandling import makeComparison
+from pathlib import Path
+from common.types import MODE
+from core.userHandling import UserRecords, UserSnapshot
+from common.exceptions import FiledecodeError
 
-def test_saveUsersRecord_creates_file(tmp_path):
-    username = "testuser"
-    users = {"alice", "bob", "carol"}
-    mode = MODE.following
+@pytest.fixture
+def mock_records_dir(tmp_path, monkeypatch):
+    """Mocks the USER_RECORDS_DIR to a temporary folder for testing."""
+    monkeypatch.setattr("core.userHandling.USER_RECORDS_DIR", tmp_path)
+    return tmp_path
 
-    with patch("core.userHandling.USER_RECORDS_DIR", tmp_path):
-        saveUsersRecord(username, mode, users)
-        target_dir = tmp_path / username / mode
-        files = list(target_dir.glob("*.json"))
-        assert len(files) == 1
+def test_snapshot_save(mock_records_dir):
+    users = {"alice", "bob"}
+    snap = UserSnapshot("testuser", MODE.following, users, timestamp="2024.01.01")
+    snap.save()
 
-        # Check file content
-        with files[0].open("r") as f:
-            data = json.load(f)
-            assert sorted(data["users"]) == sorted(users)
+    expected_path = mock_records_dir / "testuser" / MODE.following / "2024.01.01.json"
+    assert expected_path.exists()
 
-def test_compareRecentRecords_success(tmp_path):
+    with open(expected_path) as f:
+        data = json.load(f)
+        assert set(data["users"]) == users
+
+def test_records_indexing(mock_records_dir):
     username = "testuser"
     mode = MODE.following
-    users1 = {"user1", "user2", "user3"}
-    users2 = {"user2", "user3", "user4"}
+    record_path = mock_records_dir / username / mode
+    record_path.mkdir(parents=True)
 
-    with patch("core.userHandling.USER_RECORDS_DIR", tmp_path):
-        saveUsersRecord(username, mode, users1)
-        time.sleep(1)
-        saveUsersRecord(username, mode, users2)
+    # Create two dummy records
+    (record_path / "2024.01.01.00.00.01.json").write_text(json.dumps({"users": ["a"]}))
+    (record_path / "2024.01.01.00.00.02.json").write_text(json.dumps({"users": ["a", "b"]}))
 
-        result = compareRecentRecords(username, mode)
+    history = UserRecords(username, mode)
 
-        assert result.added == {"user4"}
-        assert result.removed == {"user1"}
+    # Test __len__
+    history.refresh()
+    assert len(history) == 2
 
-def test_compareRecentRecords_not_enough_files(tmp_path):
-    username = "notenough"
-    mode = MODE.followers
-    users = {"a", "b"}
+    # Test __getitem__ (index 0 is the older one due to sorting)
+    snap = history[0]
+    assert isinstance(snap, UserSnapshot)
+    assert snap.users == {"a"}
+    assert snap.timestamp == "2024.01.01.00.00.01"
 
-    with patch("core.userHandling.USER_RECORDS_DIR", tmp_path):
-        saveUsersRecord(username, mode, users)
+def test_snapshot_subtraction():
+    old = UserSnapshot("u", MODE.following, {"stay", "gone"})
+    new = UserSnapshot("u", MODE.following, {"stay", "new"})
 
-        with pytest.raises(NotEnoughUserRecords):
-            compareRecentRecords(username, mode)
+    diff = new - old
 
-def test_makeComparison_basic():
-    past = {"a", "b", "c"}
-    future = {"b", "c", "d"}
+    assert diff.added == {"new"}
+    # Note: adjust this based on how your UserStatus enum works
+    assert "gone" in diff.removed
 
-    result = makeComparison(past, future)
+def test_load_snapshot_error(mock_records_dir):
+    username = "testuser"
+    mode = MODE.following
+    record_path = mock_records_dir / username / mode
+    record_path.mkdir(parents=True)
 
-    assert result.added == {"d"}
-    assert result.removed == {"a"}
+    bad_file = record_path / "corrupt.json"
+    bad_file.write_text("not json content")
 
-def test_readFromRecords(tmp_path):
-    users = ["u1", "u2"]
-    file_path = tmp_path / "users.json"
-    file_path.write_text(json.dumps({"users": users}))
-
-    result = readFromRecords(file_path)
-
-    assert set(result) == set(users)
-
-def test_returnAllRecords_sorted(tmp_path):
-    f1 = tmp_path / "2021-01-01.json"
-    f2 = tmp_path / "2023-01-01.json"
-    f3 = tmp_path / "2022-01-01.json"
-
-    f1.write_text("[]")
-    f2.write_text("[]")
-    f3.write_text("[]")
-
-    result = returnAllRecords(user_path=tmp_path)
-    assert result == [f1, f3, f2]
-
-def test_processScrapeResults_compare(tmp_path):
-    users1 = set(["alice","bob"])
-    users2 = set(["alice","bob","jared"])
-
-    with patch("core.userHandling.USER_RECORDS_DIR", tmp_path):
-        results = processScrapeResults(username="gary",mode=MODE.followers,new_users=users1)
-        assert results.added == users1
-
-        results = processScrapeResults(username="gary",mode=MODE.followers,new_users=users2)
-        assert results.added == {"jared"}
-
-        results = processScrapeResults(username="gary",mode=MODE.followers,new_users=users1)
-        assert results.removed == {"jared"}
+    history = UserRecords(username, mode)
+    with pytest.raises(FiledecodeError): # Replace with your FiledecodeError
+        history.load_snapshot(bad_file)
